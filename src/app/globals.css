@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f7fb;
+  --navy-900: #0a1628;
+  --navy-700: #1b3a6b;
+  --navy-500: #2563eb;
+  --tile-rest: rgba(26, 58, 107, 0.04);
+  --tile-border: rgba(26, 58, 107, 0.07);
+  --text-primary: #0a1628;
+  --text-secondary: rgba(10, 22, 40, 0.52);
+  --border: rgba(10, 22, 40, 0.09);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  cursor: none !important;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f7fb;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(26, 58, 107, 0.18);
+  border-radius: 2px;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.12);
+  color: #0a1628;
+}
+
+.will-transform {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
