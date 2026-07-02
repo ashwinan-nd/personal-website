@@ -82,7 +82,7 @@ export default function FinanceVisual() {
       </div>
 
       {lastUpdated && (
-        <p className="font-mono text-[9px] text-[#0a1628]/25 tracking-wide shrink-0">
+        <p className="font-mono text-[11px] text-[#0a1628]/35 tracking-wide shrink-0">
           Updated {lastUpdated.toLocaleTimeString()}
         </p>
       )}
@@ -220,7 +220,7 @@ function SP500Chart({ data, lineProgress }: { data: SP500Data; lineProgress: num
         {yLabels.map(({ price, y }, i) => (
           <g key={i}>
             <line x1={PAD.l} y1={y} x2={PAD.l + cW} y2={y} stroke="rgba(10,22,40,0.05)" strokeWidth="0.6" />
-            <text x={PAD.l - 5} y={y + 3.5} textAnchor="end" fontSize="7.5" fill="rgba(10,22,40,0.28)" fontFamily="monospace">
+            <text x={PAD.l - 5} y={y + 3.5} textAnchor="end" fontSize="10" fill="rgba(10,22,40,0.34)" fontFamily="monospace">
               {fmt(price)}
             </text>
           </g>
@@ -251,10 +251,10 @@ function SP500Chart({ data, lineProgress }: { data: SP500Data; lineProgress: num
 
         {lineProgress > 0.97 && (
           <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>
-            <text x={projX1 + 4} y={projY1 - 5} fontSize="7.5" fill="rgba(27,58,107,0.65)" fontFamily="monospace">
+            <text x={projX1 + 4} y={projY1 - 5} fontSize="9.5" fontWeight="600" fill="rgba(27,58,107,0.7)" fontFamily="monospace">
               {(projEnd / 1000).toFixed(1)}k
             </text>
-            <text x={projX1 + 4} y={projY1 + 6} fontSize="7" fill="rgba(27,58,107,0.45)" fontFamily="monospace">
+            <text x={projX1 + 4} y={projY1 + 7} fontSize="9" fill="rgba(27,58,107,0.5)" fontFamily="monospace">
               +{Math.round((projEnd / currentPrice - 1) * 100)}%
             </text>
           </motion.g>
@@ -265,13 +265,13 @@ function SP500Chart({ data, lineProgress }: { data: SP500Data; lineProgress: num
           { label: 'Now', x: projX0 },
           { label: `${nowYear + PROJ_YEARS}`, x: projX1 },
         ].map(({ label, x }) => (
-          <text key={label} x={x} y={H - 2} textAnchor="middle" fontSize="7.5" fill="rgba(10,22,40,0.28)" fontFamily="monospace">
+          <text key={label} x={x} y={H - 2} textAnchor="middle" fontSize="10" fill="rgba(10,22,40,0.34)" fontFamily="monospace">
             {label}
           </text>
         ))}
 
         {lineProgress > 0.97 && (
-          <text x={(projX0 + projX1) / 2} y={PAD.t + 5} textAnchor="middle" fontSize="6.5" fill="rgba(27,58,107,0.28)" fontFamily="monospace">
+          <text x={(projX0 + projX1) / 2} y={PAD.t + 4} textAnchor="middle" fontSize="9" fill="rgba(27,58,107,0.35)" fontFamily="monospace">
             {PROJ_YEARS}-YR PROJECTION · {CAGR * 100}% CAGR
           </text>
         )}

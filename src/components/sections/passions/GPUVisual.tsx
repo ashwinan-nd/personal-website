@@ -395,7 +395,7 @@ function FanUnit({ xPos }: { xPos: number }) {
 }
 
 function DualFans({ exploded }: { exploded: boolean }) {
-  const ref = useLerpY(0.84, 3.72, exploded)
+  const ref = useLerpY(0.79, 3.72, exploded)
 
   useFrame(({ clock }) => {
     if (!ref.current) return
@@ -445,7 +445,7 @@ export default function GPUVisual() {
     <div className="w-full flex flex-col items-center gap-2.5" style={{ height: 380 }} data-hover>
       <div className="relative w-full flex-1" style={{ cursor: 'grab' }}>
         <Canvas
-          camera={{ position: [0, 2.2, 5.5], fov: 44 }}
+          camera={{ position: [0, 1.7, 4.4], fov: 40 }}
           gl={{ antialias: true, alpha: true }}
           shadows
           frameloop="always"
@@ -468,6 +468,7 @@ export default function GPUVisual() {
             enableZoom={false}
             enablePan={false}
             rotateSpeed={0.55}
+            target={[0, 0.35, 0]}
             minPolarAngle={Math.PI * 0.2}
             maxPolarAngle={Math.PI * 0.8}
           />

@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
-const CURRENT = 28   // % current student preparation
-const NEEDED = 82    // % needed level
+const CURRENT = 28 // % of students who feel financially prepared
+const NEEDED = 82  // % target for real readiness
+const MAX_BAR = 132 // px — bar track height so nothing overflows the tile
 
 export default function LiteracyChart() {
   const ref = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState<0 | 1 | 2>(0)
-  // phase 0: hidden, 1: current bar shown, 2: needed bar shown
 
   useEffect(() => {
     const el = ref.current
@@ -18,7 +18,7 @@ export default function LiteracyChart() {
       ([entry]) => {
         if (entry.isIntersecting) {
           setPhase(1)
-          setTimeout(() => setPhase(2), 1200)
+          setTimeout(() => setPhase(2), 900)
           observer.disconnect()
         }
       },
@@ -28,84 +28,57 @@ export default function LiteracyChart() {
     return () => observer.disconnect()
   }, [])
 
+  const Bar = ({
+    pct, active, color, label, delay,
+  }: { pct: number; active: boolean; color: string; label: string; delay: number }) => (
+    <div className="flex flex-col items-center flex-1 min-w-0">
+      {/* number */}
+      <motion.span
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: active ? 1 : 0, y: active ? 0 : 6 }}
+        transition={{ delay: delay + 0.35 }}
+        className="font-bold text-[22px] leading-none text-[#0a1628] mb-2"
+      >
+        {pct}%
+      </motion.span>
+      {/* bar track (fixed height, bar grows from the baseline) */}
+      <div className="w-full flex items-end justify-center" style={{ height: MAX_BAR }}>
+        <motion.div
+          className="w-[62%] rounded-t-md"
+          style={{ background: color, height: (pct / 100) * MAX_BAR, originY: 1 }}
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: active ? 1 : 0 }}
+          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1], delay }}
+        />
+      </div>
+      {/* baseline label */}
+      <span className="mt-2.5 font-mono text-[10px] tracking-[0.12em] text-[#0a1628]/45 uppercase text-center leading-tight">
+        {label}
+      </span>
+    </div>
+  )
+
   return (
-    <div ref={ref} className="w-full max-w-xs" style={{ paddingLeft: 13 }}>
-      {/* Chart */}
-      <div className="flex items-end gap-8 h-44 mb-4">
-        {/* Current bar */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <motion.div
-            className="w-full rounded-t-lg"
-            style={{ background: 'rgba(27,58,107,0.25)', originY: 1 }}
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: phase >= 1 ? 1 : 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div style={{ height: `${(CURRENT / 100) * 160}px` }} />
-          </motion.div>
+    <div ref={ref} className="w-full max-w-[300px] mx-auto">
+      <p className="text-center font-mono text-[10px] tracking-[0.18em] uppercase text-[#0a1628]/40 mb-4">
+        Students who feel financially prepared
+      </p>
 
-          {phase >= 1 && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="font-bold text-2xl text-[#0a1628]"
-            >
-              {CURRENT}%
-            </motion.span>
-          )}
-          <span className="font-mono text-[10px] tracking-wider text-[#0a1628]/40 uppercase text-center">
-            Current
-            <br />
-            Prep
-          </span>
-        </div>
-
-        {/* Needed bar */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <motion.div
-            className="w-full rounded-t-lg"
-            style={{ background: '#0a1628', originY: 1 }}
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: phase >= 2 ? 1 : 0 }}
-            transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div style={{ height: `${(NEEDED / 100) * 160}px` }} />
-          </motion.div>
-
-          {phase >= 2 && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="font-bold text-2xl text-[#0a1628]"
-            >
-              {NEEDED}%
-            </motion.span>
-          )}
-          <span className="font-mono text-[10px] tracking-wider text-[#0a1628]/40 uppercase text-center">
-            Required
-            <br />
-            Level
-          </span>
-        </div>
+      <div className="flex items-end gap-10 px-2">
+        <Bar pct={CURRENT} active={phase >= 1} color="rgba(27,58,107,0.28)" label={'Today'} delay={0} />
+        <Bar pct={NEEDED} active={phase >= 2} color="#0a1628" label={'Should be'} delay={0.15} />
       </div>
 
-      {/* Gap annotation */}
-      {phase >= 2 && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="flex items-center gap-2"
-        >
-          <div className="flex-1 h-px bg-[#0a1628]/15" />
-          <span className="font-mono text-[10px] tracking-widest text-[#0a1628]/40 uppercase whitespace-nowrap">
-            {NEEDED - CURRENT}pt gap
-          </span>
-          <div className="flex-1 h-px bg-[#0a1628]/15" />
-        </motion.div>
-      )}
+      {/* baseline rule + gap annotation (below the bars, no overlap) */}
+      <div className="mt-3 h-px bg-[#0a1628]/12" />
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase >= 2 ? 1 : 0 }}
+        transition={{ delay: 0.6 }}
+        className="mt-3 text-center font-mono text-[10px] tracking-[0.14em] uppercase text-[#0a1628]/45"
+      >
+        {NEEDED - CURRENT}-point readiness gap
+      </motion.p>
     </div>
   )
 }

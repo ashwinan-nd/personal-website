@@ -9,18 +9,18 @@ import * as THREE from 'three'
    down. Each carries a distinct hue so the constellation reads as varied
    payloads rather than identical dots. */
 const SATELLITES = [
-  { r: 1.32, speed: 0.52, inc: 28,  phase: 0.0, color: '#ef4444', size: 0.026 },
-  { r: 1.48, speed: 0.34, inc: 51,  phase: 1.3, color: '#38bdf8', size: 0.024 },
-  { r: 1.38, speed: 0.71, inc: -20, phase: 2.5, color: '#f59e0b', size: 0.028 },
-  { r: 1.58, speed: 0.25, inc: 97,  phase: 0.7, color: '#22c55e', size: 0.023 },
-  { r: 1.28, speed: 0.88, inc: -8,  phase: 3.8, color: '#a855f7', size: 0.025 },
-  { r: 1.52, speed: 0.41, inc: 65,  phase: 5.1, color: '#ffffff', size: 0.022 },
-  { r: 1.42, speed: 0.60, inc: 40,  phase: 2.0, color: '#2563eb', size: 0.027 },
-  { r: 1.62, speed: 0.20, inc: 82,  phase: 4.3, color: '#f97316', size: 0.024 },
+  { r: 1.14, speed: 0.52, inc: 28,  phase: 0.0, color: '#ef4444', size: 0.028 },
+  { r: 1.22, speed: 0.34, inc: 51,  phase: 1.3, color: '#38bdf8', size: 0.026 },
+  { r: 1.17, speed: 0.71, inc: -20, phase: 2.5, color: '#f59e0b', size: 0.030 },
+  { r: 1.30, speed: 0.25, inc: 97,  phase: 0.7, color: '#22c55e', size: 0.025 },
+  { r: 1.10, speed: 0.88, inc: -8,  phase: 3.8, color: '#a855f7', size: 0.027 },
+  { r: 1.26, speed: 0.41, inc: 65,  phase: 5.1, color: '#ffffff', size: 0.024 },
+  { r: 1.19, speed: 0.60, inc: 40,  phase: 2.0, color: '#2563eb', size: 0.029 },
+  { r: 1.34, speed: 0.20, inc: 82,  phase: 4.3, color: '#f97316', size: 0.026 },
 ]
 
 /* The Moon — noticeably larger than the satellites, on a wider, slower orbit */
-const MOON = { r: 2.35, speed: 0.16, inc: 12, phase: 1.0, size: 0.17 }
+const MOON = { r: 2.05, speed: 0.16, inc: 12, phase: 1.0, size: 0.17 }
 
 function buildGrid(r: number) {
   const objs: THREE.LineLoop[] = []
@@ -61,17 +61,39 @@ function buildOrbitRing(radius: number, inc: number) {
     pts.push(new THREE.Vector3(Math.cos(t) * radius, Math.sin(t) * Math.sin(incR) * radius, Math.sin(t) * radius))
   }
   const geo = new THREE.BufferGeometry().setFromPoints(pts)
-  const mat = new THREE.LineBasicMaterial({ color: '#2563eb', transparent: true, opacity: 0.12 })
+  const mat = new THREE.LineBasicMaterial({ color: '#2563eb', transparent: true, opacity: 0.32 })
   return new THREE.Line(geo, mat)
+}
+
+/* Surface texture: scattered points on the sphere read as a dotted, data-globe
+   landmass so the sphere no longer looks flat/untextured. */
+function buildSurfaceDots(count: number) {
+  const positions = new Float32Array(count * 3)
+  const R = 1.008
+  for (let i = 0; i < count; i++) {
+    // fibonacci sphere for even coverage, with a little clustering
+    const y = 1 - (i / (count - 1)) * 2
+    const rad = Math.sqrt(1 - y * y)
+    const theta = i * 2.399963 // golden angle
+    const cluster = 0.6 + 0.4 * Math.abs(Math.sin(theta * 3) * Math.cos(y * 5))
+    positions[i * 3] = Math.cos(theta) * rad * R * cluster + Math.cos(theta) * rad * R * (1 - cluster)
+    positions[i * 3 + 1] = y * R
+    positions[i * 3 + 2] = Math.sin(theta) * rad * R
+  }
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  const mat = new THREE.PointsMaterial({ color: '#7fb0ff', size: 0.022, transparent: true, opacity: 0.7, sizeAttenuation: true })
+  return new THREE.Points(geo, mat)
 }
 
 function Globe() {
   const groupRef = useRef<THREE.Group>(null)
 
-  const { gridObjs, orbitRings, moonRing } = useMemo(() => ({
+  const { gridObjs, orbitRings, moonRing, surfaceDots } = useMemo(() => ({
     gridObjs: buildGrid(1.01),
     orbitRings: SATELLITES.map((s) => buildOrbitRing(s.r, s.inc)),
     moonRing: buildOrbitRing(MOON.r, MOON.inc),
+    surfaceDots: buildSurfaceDots(520),
   }), [])
 
   return (
@@ -88,12 +110,15 @@ function Globe() {
         <meshPhongMaterial
           color="#0a1628"
           emissive="#1b3a6b"
-          emissiveIntensity={0.22}
+          emissiveIntensity={0.28}
           transparent
-          opacity={0.55}
+          opacity={0.72}
           wireframe={false}
         />
       </mesh>
+
+      {/* Surface texture dots */}
+      <primitive object={surfaceDots} />
 
       {/* Lat/lon grid lines */}
       {gridObjs.map((obj, i) => <primitive key={i} object={obj} />)}
@@ -184,7 +209,7 @@ export default function GlobeVisual() {
           maxPolarAngle={Math.PI * 0.9}
         />
       </Canvas>
-      <p className="absolute bottom-0 left-0 right-0 text-center font-mono text-[9px] tracking-widest text-[#0a1628]/22 uppercase pointer-events-none">
+      <p className="absolute bottom-0 left-0 right-0 text-center font-mono text-[11px] tracking-widest text-[#0a1628]/30 uppercase pointer-events-none">
         drag to explore
       </p>
     </div>
