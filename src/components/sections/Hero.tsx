@@ -62,21 +62,12 @@ export default function Hero() {
         }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center px-6">
+      {/* Content — nudged up slightly */}
+      <div className="relative z-10 flex flex-col items-center px-6" style={{ transform: 'translateY(-3vh)' }}>
         {/* Avatar + name unit */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
-          {/* Dot avatar with local tile fade + scroll head tilt */}
+          {/* Dot avatar — scroll-driven head tilt */}
           <div className="relative flex items-center justify-center shrink-0">
-            {/* Local tile fade — solid-ish backdrop so the figure reads clean */}
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                inset: '-22%',
-                background:
-                  'radial-gradient(ellipse 58% 62% at 50% 46%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.9) 42%, rgba(255,255,255,0) 78%)',
-              }}
-            />
             <motion.div
               className="relative w-[150px] sm:w-[185px] md:w-[236px]"
               initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
