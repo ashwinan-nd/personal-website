@@ -3,39 +3,28 @@
 import { useEffect, useRef } from 'react'
 
 type Props = {
-  /** image in /public */
+  /** multi-frame sprite sheet in /public */
   src: string
   className?: string
 }
 
-// Internal geometry resolution (CSS px).
-const RENDER_W = 300
-const GRID_W = 98 // dot density — held CONSTANT (detail comes from contrast, not more dots)
-// Crop from the bottom so the framing is head + shoulders (Adam-Hickey scale).
-// A little more of the chest is kept than before.
-const SRC_CROP = 0.74
-const MAX_TILT = 0.52 // radians the head nods forward at full scroll (~30°)
-
-type Dot = {
-  cx: number; cy: number; r: number; a: number
-  seed: number
-  head: number  // 1 well above the neck pivot, eases to 0 at the pivot
-  mouth: number // 0..1 weight inside the mouth region (smile morph)
-}
+// Sprite sheet layout: 5 columns x 6 rows = 30 frames, ordered left-to-right,
+// top-to-bottom, animating from head-up (frame 0) to head-down-at-laptop (29).
+const COLS = 5
+const ROWS = 6
+const FRAMES = COLS * ROWS
+const GRID_W = 92            // dot density (held constant)
+const BOTTOM_CROP = 0.86     // sample only the top 86% of each frame (slight bottom crop)
 
 /**
- * Animated halftone dot-field portrait, rebuilt for clarity + a solid read.
+ * Frame-driven dot-field portrait.
  *
- * - A continuous rAF loop reads scroll every frame, so the head-tilt + smile
- *   morph are always live and smooth (verified in-browser). Idle breathing
- *   keeps the field alive at rest. Ready to be swapped for a GIF later without
- *   architectural change (the loop simply paints; a GIF would replace paint).
- * - Background wall removed by high-tolerance border flood-fill + a TIGHT
- *   protected face ellipse, so the shadow "chat-bubble" lobe is gone but the
- *   whole face stays.
- * - A white base pass under the ink dots means the tile grid never shows
- *   through the figure and dissolves at the sparse edges.
- * - Detail/contour comes from a wider dot radius + alpha range, not more dots.
+ * Every frame of the sprite sheet is sampled once into the same dot grid
+ * (background removed by border flood-fill + a generous protected ellipse).
+ * On scroll, the current frame index = scrollProgress * (FRAMES-1); the render
+ * interpolates each dot's darkness between the two neighbouring frames, so the
+ * head-tilt reads as smooth frame-to-frame motion with no stutter. A white base
+ * pass + a per-dot minimum keeps the face gap-free and solid over the tiles.
  */
 export default function DotAvatar({ src, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -43,7 +32,6 @@ export default function DotAvatar({ src, className }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
     let cancelled = false
@@ -56,181 +44,167 @@ export default function DotAvatar({ src, className }: Props) {
     img.onload = () => {
       if (cancelled) return
 
-      const srcW = img.width
-      const srcH = Math.round(img.height * SRC_CROP)
-      const aspect = srcH / srcW
-      const cssW = RENDER_W
+      const frameW = img.width / COLS
+      const frameH = img.height / ROWS
+      const cropH = frameH * BOTTOM_CROP
+      const aspect = cropH / frameW
+      const cssW = 300
       const cssH = Math.round(cssW * aspect)
       const GRID_H = Math.round(GRID_W * aspect)
+      const CELLS = GRID_W * GRID_H
 
-      // ── sample the cropped photo down to a dot grid ──────────────────
       const tmp = document.createElement('canvas')
       tmp.width = GRID_W
       tmp.height = GRID_H
       const tctx = tmp.getContext('2d', { willReadFrequently: true })!
-      tctx.drawImage(img, 0, 0, srcW, srcH, 0, 0, GRID_W, GRID_H)
-      const data = tctx.getImageData(0, 0, GRID_W, GRID_H).data
 
-      const at = (x: number, y: number) => (y * GRID_W + x) * 4
-      const diff = (i: number, r: number, g: number, b: number) =>
-        Math.abs(data[i] - r) + Math.abs(data[i + 1] - g) + Math.abs(data[i + 2] - b)
+      // Per-frame per-cell darkness (0 = background/empty).
+      const frameDark: Float32Array[] = []
+      const anySubject = new Uint8Array(CELLS)
 
-      let sr = 0, sg = 0, sb = 0
-      for (let x = 0; x < GRID_W; x++) { const i = at(x, 0); sr += data[i]; sg += data[i + 1]; sb += data[i + 2] }
-      sr /= GRID_W; sg /= GRID_W; sb /= GRID_W
+      for (let f = 0; f < FRAMES; f++) {
+        const col = f % COLS
+        const row = (f / COLS) | 0
+        tctx.clearRect(0, 0, GRID_W, GRID_H)
+        tctx.drawImage(img, col * frameW, row * frameH, frameW, cropH, 0, 0, GRID_W, GRID_H)
+        const data = tctx.getImageData(0, 0, GRID_W, GRID_H).data
 
-      const bg = new Uint8Array(GRID_W * GRID_H)
-      const TOL = 214
-      const stack: number[] = []
-      const consider = (x: number, y: number) => {
-        if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return
-        const p = y * GRID_W + x
-        if (bg[p]) return
-        if (diff(p * 4, sr, sg, sb) < TOL) { bg[p] = 1; stack.push(p) }
-      }
-      for (let x = 0; x < GRID_W; x++) { consider(x, 0); consider(x, GRID_H - 1) }
-      for (let y = 0; y < GRID_H; y++) { consider(0, y); consider(GRID_W - 1, y) }
-      while (stack.length) {
-        const p = stack.pop()!
-        const x = p % GRID_W, y = (p / GRID_W) | 0
-        consider(x + 1, y); consider(x - 1, y); consider(x, y + 1); consider(x, y - 1)
-      }
+        // seed = top-row average (the wall)
+        let sr = 0, sg = 0, sb = 0
+        for (let x = 0; x < GRID_W; x++) { const i = x * 4; sr += data[i]; sg += data[i + 1]; sb += data[i + 2] }
+        sr /= GRID_W; sg /= GRID_W; sb /= GRID_W
 
-      // TIGHT protected ellipse — covers the face only, not the shadow lobe to
-      // its left, so the "chat-bubble" artifact gets removed.
-      const faceCx = GRID_W * 0.52, faceCy = GRID_H * 0.30
-      const faceRx = GRID_W * 0.22, faceRy = GRID_H * 0.27
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const nx = (x - faceCx) / faceRx, ny = (y - faceCy) / faceRy
-          if (nx * nx + ny * ny <= 1) bg[y * GRID_W + x] = 0
-        }
-      }
-
-      // ── build dot list ───────────────────────────────────────────────
-      const dots: Dot[] = []
-      const cell = cssW / GRID_W
-      const maxR = cell * 0.62
-      const neckY = cssH * 0.46
-      const mouthCx = cssW * 0.52, mouthCy = cssH * 0.35
-      const mouthRx = cssW * 0.16, mouthRy = cssH * 0.045
-
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
+        // border flood-fill removes the connected light wall
+        const bg = new Uint8Array(CELLS)
+        const TOL = 210
+        const stack: number[] = []
+        const consider = (x: number, y: number) => {
+          if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return
           const p = y * GRID_W + x
+          if (bg[p]) return
+          const i = p * 4
+          if (Math.abs(data[i] - sr) + Math.abs(data[i + 1] - sg) + Math.abs(data[i + 2] - sb) < TOL) { bg[p] = 1; stack.push(p) }
+        }
+        for (let x = 0; x < GRID_W; x++) { consider(x, 0); consider(x, GRID_H - 1) }
+        for (let y = 0; y < GRID_H; y++) { consider(0, y); consider(GRID_W - 1, y) }
+        while (stack.length) {
+          const p = stack.pop()!
+          consider((p % GRID_W) + 1, (p / GRID_W) | 0); consider((p % GRID_W) - 1, (p / GRID_W) | 0)
+          consider(p % GRID_W, ((p / GRID_W) | 0) + 1); consider(p % GRID_W, ((p / GRID_W) | 0) - 1)
+        }
+        // protect the face core only (tight enough to avoid a wall "ring",
+        // tall enough to cover the head as it lowers across frames)
+        const cx = GRID_W * 0.5, cy = GRID_H * 0.40, rx = GRID_W * 0.23, ry = GRID_H * 0.40
+        for (let y = 0; y < GRID_H; y++) {
+          for (let x = 0; x < GRID_W; x++) {
+            const nx = (x - cx) / rx, ny = (y - cy) / ry
+            if (nx * nx + ny * ny <= 1) bg[y * GRID_W + x] = 0
+          }
+        }
+
+        const df = new Float32Array(CELLS)
+        for (let p = 0; p < CELLS; p++) {
           if (bg[p]) continue
           const i = p * 4
           const L = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255
-          const dark = 1 - L
-          const cx = x * cell + cell / 2
-          const cy = y * cell + cell / 2
-          const head = cy < neckY ? Math.min(1, (neckY - cy) / (cssH * 0.30)) : 0
-          const mnx = (cx - mouthCx) / mouthRx, mny = (cy - mouthCy) / mouthRy
-          const md = mnx * mnx + mny * mny
-          dots.push({
-            cx, cy,
-            // wider radius + alpha range => more contour, same dot count
-            r: maxR * (0.20 + 0.92 * Math.pow(dark, 0.82)),
-            a: 0.42 + 0.58 * dark,
-            seed: (x * 7 + y * 13) % 100,
-            head,
-            mouth: md < 1 ? 1 - md : 0,
-          })
+          df[p] = 1 - L
+          anySubject[p] = 1
         }
+        frameDark.push(df)
       }
 
-      // ── visible canvas (retina) ──────────────────────────────────────
+      // Stable dot positions = cells that are subject in ANY frame.
+      const cell = cssW / GRID_W
+      const maxR = cell * 0.62
+      const idxs: number[] = []
+      const px: number[] = [], py: number[] = [], seed: number[] = []
+      for (let p = 0; p < CELLS; p++) {
+        if (!anySubject[p]) continue
+        const x = p % GRID_W, y = (p / GRID_W) | 0
+        idxs.push(p)
+        px.push(x * cell + cell / 2)
+        py.push(y * cell + cell / 2)
+        seed.push((x * 7 + y * 13) % 100)
+      }
+
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       canvas.width = Math.round(cssW * dpr)
       canvas.height = Math.round(cssH * dpr)
       const ctx = canvas.getContext('2d')!
       ctx.scale(dpr, dpr)
-      const whiteR = cell * 0.62 // fills cell gaps so tiles never show through
+      const whiteR = cell * 0.62
 
-      const draw = (reveal: number, tilt: number, tMs: number) => {
+      const draw = (reveal: number, frameF: number, tMs: number) => {
         ctx.clearRect(0, 0, cssW, cssH)
-        const cosT = Math.cos(tilt)
-        const idle = prefersReduced ? 0 : 1
-
-        // Resolve each dot's animated position once (shared by both passes).
-        const px: number[] = []
-        const py: number[] = []
-        const pv: number[] = []
-        for (let k = 0; k < dots.length; k++) {
-          const d = dots[k]
+        const fLo = Math.floor(frameF)
+        const fHi = Math.min(FRAMES - 1, fLo + 1)
+        const ft = frameF - fLo
+        const dLo = frameDark[fLo], dHi = frameDark[fHi]
+        const n = idxs.length
+        const rr: number[] = new Array(n)
+        const av: number[] = new Array(n)
+        const dxA: number[] = new Array(n)
+        const dyA: number[] = new Array(n)
+        for (let k = 0; k < n; k++) {
+          const p = idxs[k]
+          let dark = dLo[p] * (1 - ft) + dHi[p] * ft
           let rv = 1
           if (reveal < 1) {
-            const dist = Math.hypot(d.cx - cssW / 2, d.cy - cssH * 0.4)
-            const startR = (dist / (cssW * 0.7)) * 0.5
-            rv = Math.min(1, Math.max(0, (reveal - startR) / 0.5))
+            const dist = Math.hypot(px[k] - cssW / 2, py[k] - cssH * 0.4)
+            rv = Math.min(1, Math.max(0, (reveal - (dist / (cssW * 0.7)) * 0.5) / 0.5))
           }
-          let dx = d.cx, dy = d.cy
-          if (d.head > 0 && tilt > 0.0001) {
-            const rel = d.cy - neckY
-            dy = neckY + (rel * cosT + (-rel) * (1 - cosT) * 0.9) * d.head + rel * (1 - d.head)
+          // min floor so subject cells never leave a blank gap on the face
+          const present = dark > 0.02 ? Math.max(dark, 0.24) : 0
+          rr[k] = present > 0 ? maxR * (0.30 + 0.9 * Math.pow(present, 0.8)) * rv : 0
+          av[k] = present > 0 ? (0.5 + 0.5 * present) * rv : 0
+          let dx = px[k], dy = py[k]
+          if (!prefersReduced) {
+            const ph = tMs * 0.0016 + seed[k] * 0.12
+            dx += Math.cos(ph) * 0.18; dy += Math.sin(ph * 1.1) * 0.18
           }
-          if (d.mouth > 0 && tilt > 0.0001) {
-            const relX = (d.cx - mouthCx) / mouthRx
-            dy += relX * relX * 4.5 * d.mouth * (tilt / MAX_TILT)
-          }
-          if (idle) {
-            const ph = tMs * 0.0016 + d.seed * 0.12
-            dx += Math.cos(ph) * 0.2
-            dy += Math.sin(ph * 1.1) * 0.2
-          }
-          px[k] = dx; py[k] = dy; pv[k] = rv
+          dxA[k] = dx; dyA[k] = dy
         }
-
-        // Pass 1 — white base so the tile grid never shows through the figure.
+        // white base
         ctx.fillStyle = '#ffffff'
-        for (let k = 0; k < dots.length; k++) {
-          if (pv[k] <= 0) continue
-          ctx.globalAlpha = 0.92 * pv[k]
-          ctx.beginPath()
-          ctx.arc(px[k], py[k], whiteR * Math.max(0.7, pv[k]), 0, Math.PI * 2)
-          ctx.fill()
+        for (let k = 0; k < n; k++) {
+          if (rr[k] <= 0) continue
+          ctx.globalAlpha = 0.92
+          ctx.beginPath(); ctx.arc(dxA[k], dyA[k], whiteR, 0, Math.PI * 2); ctx.fill()
         }
-
-        // Pass 2 — ink dots (the portrait).
+        // ink
         ctx.fillStyle = '#0a1628'
-        for (let k = 0; k < dots.length; k++) {
-          if (pv[k] <= 0) continue
-          const d = dots[k]
-          ctx.globalAlpha = d.a * pv[k]
-          ctx.beginPath()
-          ctx.arc(px[k], py[k], d.r * pv[k], 0, Math.PI * 2)
-          ctx.fill()
+        for (let k = 0; k < n; k++) {
+          if (rr[k] <= 0) continue
+          ctx.globalAlpha = av[k]
+          ctx.beginPath(); ctx.arc(dxA[k], dyA[k], rr[k], 0, Math.PI * 2); ctx.fill()
         }
         ctx.globalAlpha = 1
       }
 
-      const tiltFor = () => {
+      const frameFor = () => {
         const vh = window.innerHeight || 800
-        return Math.min(1, Math.max(0, window.scrollY / (vh * 0.5))) * MAX_TILT
+        const prog = Math.min(1, Math.max(0, window.scrollY / (vh * 0.6)))
+        return prog * (FRAMES - 1)
       }
 
       let start = 0
-      let curTilt = 0
-      const frame = (t: number) => {
+      let cur = 0
+      const loop = (t: number) => {
         if (cancelled) return
         if (!start) start = t
-        const reveal = prefersReduced ? 1 : Math.min(1, (t - start) / 1200)
+        const reveal = prefersReduced ? 1 : Math.min(1, (t - start) / 1100)
         const eased = 1 - Math.pow(1 - reveal, 3)
-        const onScreen = window.scrollY < (window.innerHeight || 800) * 1.25
-        if (onScreen) {
-          const target = tiltFor()
-          curTilt += (target - curTilt) * 0.16
-          draw(eased, prefersReduced ? tiltFor() : curTilt, t)
+        if (window.scrollY < (window.innerHeight || 800) * 1.25) {
+          const target = frameFor()
+          cur += (target - cur) * 0.18 // smoothing between frames
+          draw(eased, cur, t)
         }
-        raf = requestAnimationFrame(frame)
+        raf = requestAnimationFrame(loop)
       }
-      raf = requestAnimationFrame(frame)
+      raf = requestAnimationFrame(loop)
     }
 
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(raf)
-    }
+    return () => { cancelled = true; cancelAnimationFrame(raf) }
   }, [src])
 
   return (
@@ -240,8 +214,8 @@ export default function DotAvatar({ src, className }: Props) {
       role="img"
       aria-label="Animated dot-style portrait of Ashwin Anand"
       style={{
-        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
-        maskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 84%, transparent 99%)',
+        maskImage: 'linear-gradient(to bottom, black 0%, black 84%, transparent 99%)',
         borderRadius: 20,
       }}
     />

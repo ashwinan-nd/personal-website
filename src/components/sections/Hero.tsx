@@ -75,7 +75,7 @@ export default function Hero() {
               animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, ease: EASE }}
             >
-              <DotAvatar src="/ashwin.png" className="block w-full h-auto" />
+              <DotAvatar src="/ashwin-frames.png" className="block w-full h-auto" />
             </motion.div>
           </div>
 
