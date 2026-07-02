@@ -7,8 +7,10 @@ declare global {
     __lenis?: {
       scrollTo: (
         target: number,
-        options?: { duration?: number; easing?: (t: number) => number; onComplete?: () => void }
+        options?: { duration?: number; easing?: (t: number) => number; onComplete?: () => void; immediate?: boolean }
       ) => void
+      stop: () => void
+      start: () => void
     }
   }
 }
