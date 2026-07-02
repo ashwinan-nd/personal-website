@@ -460,12 +460,14 @@ export default function GPUVisual() {
 
           <GPUScene exploded={exploded} />
 
+          {/* Single turntable rotation lives on the model group (GPUScene) so
+              every component turns together at one shared speed. OrbitControls
+              handles manual drag only — no autoRotate to avoid a second,
+              compounding rotation. */}
           <OrbitControls
             enableZoom={false}
             enablePan={false}
             rotateSpeed={0.55}
-            autoRotate={!exploded}
-            autoRotateSpeed={1.0}
             minPolarAngle={Math.PI * 0.2}
             maxPolarAngle={Math.PI * 0.8}
           />

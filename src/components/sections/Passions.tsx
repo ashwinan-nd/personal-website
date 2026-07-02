@@ -1,11 +1,7 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import {
-  motion,
-  useScroll,
-  useMotionValueEvent,
-} from 'framer-motion'
+import { useState, useEffect, type ComponentType } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 
 const GlobeVisual   = dynamic(() => import('./passions/GlobeVisual'),   { ssr: false })
@@ -13,229 +9,313 @@ const FinanceVisual = dynamic(() => import('./passions/FinanceVisual'), { ssr: f
 const GPUVisual     = dynamic(() => import('./passions/GPUVisual'),     { ssr: false })
 const LiteracyChart = dynamic(() => import('./passions/LiteracyChart'), { ssr: false })
 const AgentNetwork  = dynamic(() => import('./passions/AgentNetwork'),  { ssr: false })
+const CookingVisual = dynamic(() => import('./passions/CookingVisual'), { ssr: false })
 
-const PANEL_COUNT = 5
-const EASE: [number, number, number, number] = [0.32, 0.72, 0, 1]
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
-const panels = [
+type Interest = {
+  id: string
+  category: string
+  headline: string
+  blurb: string
+  link?: { label: string; href: string }
+  Visual: ComponentType
+  /** natural height of the visual, used to scale the grid preview */
+  natH: number
+}
+
+const interests: Interest[] = [
   {
-    number: '01',
-    category: 'COSMOS',
+    id: 'space',
+    category: 'Cosmos',
     headline: 'Space',
-    body: 'Fascinated by the systems that govern the universe, and the technologies expanding humanity beyond Earth.',
+    blurb:
+      "Space is the new frontier, and we are in the middle of the 2nd Space Race. Useful innovation is growing. My bet: we'll be on Mars by 2033, and I'll be on the Moon by 2035. Read my paper on LinkedIn!",
+    link: { label: 'Read my paper on LinkedIn', href: 'https://www.linkedin.com/in/ashwinanand/' },
     Visual: GlobeVisual,
+    natH: 300,
   },
   {
-    number: '02',
-    category: 'MARKETS',
+    id: 'finance',
+    category: 'Markets',
     headline: 'High Finance',
-    body: 'Drawn toward capital markets, macro systems, and the underlying mechanics that shape global economies.',
+    blurb:
+      'Markets are the fastest feedback loop humans ever built. I track macro, rates, and how capital actually moves. The live prices here run through my own server proxy, so the API key never touches your browser.',
     Visual: FinanceVisual,
+    natH: 300,
   },
   {
-    number: '03',
-    category: 'SILICON',
+    id: 'gpu',
+    category: 'Silicon',
     headline: 'GPU & Hardware',
-    body: 'Obsessed with computational infrastructure, parallel processing, and the hardware powering modern intelligence.',
+    blurb:
+      'Intelligence runs on silicon. I care about how a GPU actually works, from the compute die to the memory stacks and power delivery. Open it up and hit explode to watch the whole board come apart.',
     Visual: GPUVisual,
+    natH: 330,
   },
   {
-    number: '04',
-    category: 'SYSTEMS',
+    id: 'literacy',
+    category: 'Systems',
     headline: 'Financial Literacy',
-    body: 'Interested in making financial systems more understandable and accessible for everyone.',
+    blurb:
+      'Most people are never taught how money works. I wrote and pushed a resolution for a mandated financial literacy course. This knowledge should not be a privilege.',
     Visual: LiteracyChart,
+    natH: 250,
   },
   {
-    number: '05',
-    category: 'FRONTIER',
+    id: 'agents',
+    category: 'Frontier',
     headline: 'Agents for Agents',
-    body: 'Exploring systems where autonomous agents coordinate, reason, and build alongside one another.',
+    blurb:
+      'I am building the best possible agentic harness for my own work and passions. Agents that plan, verify, and ship, so I operate at a level I could not reach alone.',
     Visual: AgentNetwork,
+    natH: 300,
+  },
+  {
+    id: 'cooking',
+    category: 'Craft',
+    headline: 'Cooking',
+    blurb:
+      'Cooking is engineering you can eat. Heat, timing, and ratios run as a tight loop. I optimize the process and the plate.',
+    Visual: CookingVisual,
+    natH: 240,
   },
 ]
 
 export default function Passions() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const activeIndexRef = useRef(0)
-  const inSectionRef = useRef(false)
+  const [open, setOpen] = useState<number | null>(null)
+  const reduce = useReducedMotion()
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
-
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    inSectionRef.current = v > 0 && v < 1
-    const idx = Math.min(PANEL_COUNT - 1, Math.floor(v * PANEL_COUNT))
-    if (idx !== activeIndexRef.current) {
-      activeIndexRef.current = idx
-      setActiveIndex(idx)
-    }
-  })
-
-  // Wheel-snap: accumulate scroll delta; advance panel after threshold
+  // Modal lifecycle: ESC to close, pause Lenis while open so the backdrop
+  // does not scroll the page behind it.
   useEffect(() => {
-    let cooldown = false
-    let accumulated = 0
-    const THRESHOLD = 155 // px of wheel delta needed to advance one panel
-
-    const onWheel = (e: WheelEvent) => {
-      if (!inSectionRef.current) return
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
-      // Only engage when sticky: section top <= 0 and bottom > viewport height
-      if (rect.top > 4 || rect.bottom < window.innerHeight - 4) return
-
-      if (cooldown) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        return
-      }
-
-      // Reset if direction reverses
-      if (accumulated !== 0 && Math.sign(e.deltaY) !== Math.sign(accumulated)) {
-        accumulated = 0
-      }
-      accumulated += e.deltaY
-      if (Math.abs(accumulated) < THRESHOLD) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        return
-      }
-
-      const dir = Math.sign(accumulated) as 1 | -1
-      accumulated = 0
-
-      const cur = activeIndexRef.current
-      const next = Math.max(0, Math.min(PANEL_COUNT - 1, cur + dir))
-      // At section boundary — release the event so scroll exits naturally
-      if (next === cur) return
-
-      e.preventDefault()
-      e.stopImmediatePropagation()
-
-      cooldown = true
-      setTimeout(() => { cooldown = false }, 900)
-
-      const sectionTop = containerRef.current?.offsetTop ?? 0
-      const targetY = sectionTop + next * window.innerHeight
-
-      if (window.__lenis) {
-        window.__lenis.scrollTo(targetY, {
-          duration: 0.82,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3),
-        })
-      } else {
-        window.scrollTo({ top: targetY, behavior: 'smooth' })
-      }
+    if (open === null) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(null) }
+    window.addEventListener('keydown', onKey)
+    window.__lenis?.stop()
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.__lenis?.start()
     }
-
-    window.addEventListener('wheel', onWheel, { passive: false, capture: true })
-    return () => window.removeEventListener('wheel', onWheel, { capture: true } as EventListenerOptions)
-  }, [])
+  }, [open])
 
   return (
-    <section
-      id="passions"
-      ref={containerRef}
-      style={{ height: `${PANEL_COUNT * 100}vh` }}
-      className="relative"
-    >
-      <div className="sticky top-0 h-screen overflow-hidden bg-white">
-
-        {/* Progress dots — right-center edge */}
-        <div
-          className="absolute right-7 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2.5"
+    <section id="passions" className="relative bg-white py-24 md:py-32 overflow-hidden">
+      {/* Header */}
+      <motion.div
+        initial={reduce ? undefined : { opacity: 0, y: 24 }}
+        whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.8, ease: EASE }}
+        className="text-center mb-14 md:mb-20 px-6"
+      >
+        <p className="font-mono text-[11px] tracking-[0.3em] uppercase text-[#1b3a6b]/40 mb-4">
+          Interests
+        </p>
+        <h2
+          className="font-bold text-[#0a1628] leading-[0.92] tracking-[-0.04em] mx-auto"
+          style={{ fontSize: 'clamp(34px, 5vw, 60px)' }}
         >
-          {panels.map((_, i) => (
-            <div
-              key={i}
-              className="rounded-full transition-all duration-350"
-              style={{
-                width: 6,
-                height: activeIndex === i ? 26 : 6,
-                background: activeIndex === i ? '#0a1628' : 'rgba(10,22,40,0.18)',
-              }}
-            />
-          ))}
-        </div>
+          Things I&apos;m deep on.
+        </h2>
+        <p className="mt-5 text-[15px] text-[#0a1628]/45">
+          Tap any tile to flip it over.
+        </p>
+      </motion.div>
 
-        {/* Panels */}
-        {panels.map((panel, i) => (
-          <Panel
-            key={panel.number}
-            panel={panel}
-            index={i}
-            activeIndex={activeIndex}
-          />
+      {/* 2 x 3 grid — centered, borderless, gap-based spacing */}
+      <div className="mx-auto max-w-[880px] px-6 grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-7">
+        {interests.map((it, i) => (
+          <InterestCard key={it.id} interest={it} index={i} reduce={!!reduce} onOpen={() => setOpen(i)} />
         ))}
       </div>
+
+      {/* Flip-to-center overlay */}
+      <AnimatePresence>
+        {open !== null && (
+          <Overlay
+            interest={interests[open]}
+            reduce={!!reduce}
+            onClose={() => setOpen(null)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   )
 }
 
-function Panel({
-  panel,
-  index,
-  activeIndex,
+/* ── Grid pill ──────────────────────────────────────────────────────────── */
+const CARD_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(145deg, #eef1f7 0%, #e3e8f0 100%)',
+  boxShadow:
+    '11px 11px 26px rgba(10,22,40,0.10), -9px -9px 22px rgba(255,255,255,0.92), inset 0 1px 0 rgba(255,255,255,0.6)',
+}
+
+function InterestCard({
+  interest, index, reduce, onOpen,
 }: {
-  panel: (typeof panels)[0]
-  index: number
-  activeIndex: number
+  interest: Interest; index: number; reduce: boolean; onOpen: () => void
 }) {
-  const isActive = index === activeIndex
-  const isPrev = index < activeIndex
-
+  const H = 208
+  const k = H / interest.natH
   return (
+    // Rendered as a role="button" div (not a <button>) because the previews
+    // embed their own interactive controls, and nested buttons are invalid HTML.
     <motion.div
-      className="absolute inset-0 flex items-center"
-      animate={{
-        opacity: isActive ? 1 : 0,
-        y: isActive ? 0 : isPrev ? -28 : 28,
-        pointerEvents: isActive ? 'auto' : 'none',
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() }
       }}
-      transition={{ duration: 0.48, ease: EASE }}
+      initial={reduce ? undefined : { opacity: 0, y: 26 }}
+      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.6, ease: EASE, delay: (index % 2) * 0.06 + Math.floor(index / 2) * 0.05 }}
+      whileHover={reduce ? undefined : { y: -6 }}
+      className="group relative text-left rounded-[28px] p-5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1b3a6b]/40"
+      style={CARD_STYLE}
+      aria-label={`${interest.headline} — open details`}
     >
-      {/* 4-column virtual grid: text centered in cols 1-2, visual in cols 3-4 */}
-      <div className="w-full grid grid-cols-2 items-center" style={{ padding: '0 4vw' }}>
-
-        {/* Text column — centered at 25% of viewport */}
-        <div className="flex justify-center">
-          <div className="flex flex-col gap-7 w-full max-w-[340px]">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] tracking-[0.3em] text-[#1b3a6b]/40 uppercase">
-                {panel.category}
-              </span>
-              <span className="font-mono text-[10px] text-[#1b3a6b]/22">
-                {panel.number}
-              </span>
-            </div>
-
-            <h3
-              className="font-bold text-[#0a1628] leading-[0.9] tracking-[-0.04em]"
-              style={{ fontSize: 'clamp(36px, 4.5vw, 62px)' }}
-            >
-              {panel.headline}
-            </h3>
-
-            <p
-              className="text-[15px] leading-[1.8]"
-              style={{ color: 'rgba(10,22,40,0.52)' }}
-            >
-              {panel.body}
-            </p>
-          </div>
-        </div>
-
-        {/* Visual column — centered at 75% of viewport */}
-        <div className="hidden md:flex justify-center">
-          <div className="w-full max-w-[480px]">
-            <panel.Visual />
-          </div>
+      {/* Scaled, non-interactive preview */}
+      <div style={{ height: H, overflow: 'hidden', borderRadius: 18 }} className="pointer-events-none">
+        <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top left' }}>
+          <interest.Visual />
         </div>
       </div>
+
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#1b3a6b]/42">
+            {interest.category}
+          </p>
+          <h3 className="font-bold text-[#0a1628] text-[21px] tracking-tight leading-tight mt-1">
+            {interest.headline}
+          </h3>
+        </div>
+        <span
+          className="shrink-0 w-9 h-9 rounded-full grid place-items-center text-[#1b3a6b]/50 group-hover:text-[#1b3a6b] transition-colors"
+          style={{ background: 'rgba(255,255,255,0.7)', boxShadow: 'inset 0 0 0 1px rgba(10,22,40,0.06)' }}
+          aria-hidden
+        >
+          ⤢
+        </span>
+      </div>
     </motion.div>
+  )
+}
+
+/* ── Centered flip overlay ──────────────────────────────────────────────── */
+function Overlay({
+  interest, reduce, onClose,
+}: {
+  interest: Interest; reduce: boolean; onClose: () => void
+}) {
+  const [flipped, setFlipped] = useState(true) // opens showing the description
+  const CARD_H = 520
+
+  const faceBase: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    borderRadius: 22,
+    overflow: 'hidden',
+  }
+
+  return (
+    <>
+      {/* Dim backdrop */}
+      <motion.div
+        className="fixed inset-0 z-[100]"
+        style={{ background: 'rgba(10,22,40,0.5)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.28 }}
+        onClick={onClose}
+      />
+
+      {/* Card */}
+      <div className="fixed inset-0 z-[101] flex items-center justify-center p-5 pointer-events-none">
+        <motion.div
+          className="relative pointer-events-auto w-full"
+          style={{ maxWidth: 560 }}
+          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 24 }}
+          animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 14 }}
+          transition={{ duration: 0.42, ease: EASE }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={interest.headline}
+        >
+          {/* Floating controls (outside the 3D flip so they never mirror or clip) */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute -top-3 -right-3 z-20 w-10 h-10 rounded-full grid place-items-center bg-white text-[#0a1628]/70 hover:text-[#0a1628] shadow-[0_6px_20px_rgba(10,22,40,0.18)] transition-colors"
+          >
+            ✕
+          </button>
+          <button
+            type="button"
+            onClick={() => setFlipped((f) => !f)}
+            aria-label={flipped ? 'Show the visual' : 'Read about this'}
+            className="absolute -top-3 left-4 z-20 h-10 px-4 rounded-full grid place-items-center bg-white font-mono text-[11px] tracking-widest uppercase text-[#1b3a6b]/70 hover:text-[#1b3a6b] shadow-[0_6px_20px_rgba(10,22,40,0.16)] transition-colors"
+          >
+            {flipped ? '↺ Visual' : 'Read ↺'}
+          </button>
+
+          <div style={{ perspective: 1800 }}>
+            <motion.div
+              style={{ transformStyle: 'preserve-3d', position: 'relative', height: CARD_H }}
+              initial={reduce ? false : { rotateY: 0 }}
+              animate={{ rotateY: reduce ? 0 : flipped ? 180 : 0 }}
+              transition={{ duration: 0.7, ease: EASE }}
+            >
+              {/* FRONT — interactive visual */}
+              <div style={{ ...faceBase, ...CARD_STYLE }} className="flex flex-col px-7 pt-8 pb-6">
+                <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+                  <div className="w-full h-full flex items-center justify-center">
+                    <interest.Visual />
+                  </div>
+                </div>
+                <div className="mt-2 shrink-0">
+                  <p className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#1b3a6b]/42">{interest.category}</p>
+                  <h3 className="font-bold text-[#0a1628] text-[22px] tracking-tight truncate">{interest.headline}</h3>
+                </div>
+              </div>
+
+              {/* BACK — description */}
+              <div
+                style={{ ...faceBase, ...CARD_STYLE, transform: 'rotateY(180deg)' }}
+                className="flex flex-col justify-center p-9"
+              >
+                <p className="font-mono text-[11px] tracking-[0.3em] uppercase text-[#1b3a6b]/45 mb-4">
+                  {interest.category}
+                </p>
+                <h3 className="font-bold text-[#0a1628] leading-[0.95] tracking-[-0.03em] mb-6" style={{ fontSize: 'clamp(30px, 5vw, 46px)' }}>
+                  {interest.headline}
+                </h3>
+                <p className="text-[16px] md:text-[17px] leading-[1.7] text-[#0a1628]/62">
+                  {interest.blurb}
+                </p>
+                {interest.link && (
+                  <a
+                    href={interest.link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 inline-flex items-center gap-1.5 font-medium text-[#1b3a6b] hover:text-[#2563eb] transition-colors w-fit"
+                  >
+                    {interest.link.label} <span aria-hidden>↗</span>
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    </>
   )
 }

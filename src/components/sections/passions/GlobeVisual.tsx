@@ -5,17 +5,22 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
-/* Satellites in orbit — same style as satellitemap.space but navy/holographic */
+/* Colored orbital objects around Earth — modeled after LunarLauncher, scaled
+   down. Each carries a distinct hue so the constellation reads as varied
+   payloads rather than identical dots. */
 const SATELLITES = [
-  { r: 1.32, speed: 0.52, inc: 28,  phase: 0.0 },
-  { r: 1.48, speed: 0.34, inc: 51,  phase: 1.3 },
-  { r: 1.38, speed: 0.71, inc: -20, phase: 2.5 },
-  { r: 1.58, speed: 0.25, inc: 97,  phase: 0.7 },
-  { r: 1.28, speed: 0.88, inc: -8,  phase: 3.8 },
-  { r: 1.52, speed: 0.41, inc: 65,  phase: 5.1 },
-  { r: 1.42, speed: 0.60, inc: 40,  phase: 2.0 },
-  { r: 1.62, speed: 0.20, inc: 82,  phase: 4.3 },
+  { r: 1.32, speed: 0.52, inc: 28,  phase: 0.0, color: '#ef4444', size: 0.026 },
+  { r: 1.48, speed: 0.34, inc: 51,  phase: 1.3, color: '#38bdf8', size: 0.024 },
+  { r: 1.38, speed: 0.71, inc: -20, phase: 2.5, color: '#f59e0b', size: 0.028 },
+  { r: 1.58, speed: 0.25, inc: 97,  phase: 0.7, color: '#22c55e', size: 0.023 },
+  { r: 1.28, speed: 0.88, inc: -8,  phase: 3.8, color: '#a855f7', size: 0.025 },
+  { r: 1.52, speed: 0.41, inc: 65,  phase: 5.1, color: '#ffffff', size: 0.022 },
+  { r: 1.42, speed: 0.60, inc: 40,  phase: 2.0, color: '#2563eb', size: 0.027 },
+  { r: 1.62, speed: 0.20, inc: 82,  phase: 4.3, color: '#f97316', size: 0.024 },
 ]
+
+/* The Moon — noticeably larger than the satellites, on a wider, slower orbit */
+const MOON = { r: 2.35, speed: 0.16, inc: 12, phase: 1.0, size: 0.17 }
 
 function buildGrid(r: number) {
   const objs: THREE.LineLoop[] = []
@@ -63,9 +68,10 @@ function buildOrbitRing(radius: number, inc: number) {
 function Globe() {
   const groupRef = useRef<THREE.Group>(null)
 
-  const { gridObjs, orbitRings } = useMemo(() => ({
+  const { gridObjs, orbitRings, moonRing } = useMemo(() => ({
     gridObjs: buildGrid(1.01),
     orbitRings: SATELLITES.map((s) => buildOrbitRing(s.r, s.inc)),
+    moonRing: buildOrbitRing(MOON.r, MOON.inc),
   }), [])
 
   return (
@@ -94,14 +100,20 @@ function Globe() {
 
       {/* Orbit path rings */}
       {orbitRings.map((obj, i) => <primitive key={`orbit-${i}`} object={obj} />)}
+      <primitive object={moonRing} />
 
-      {/* Satellites */}
+      {/* Colored orbital objects */}
       {SATELLITES.map((s, i) => <Satellite key={i} {...s} />)}
+
+      {/* Moon */}
+      <Moon />
     </group>
   )
 }
 
-function Satellite({ r, speed, inc, phase }: { r: number; speed: number; inc: number; phase: number }) {
+function Satellite({ r, speed, inc, phase, color, size }: {
+  r: number; speed: number; inc: number; phase: number; color: string; size: number
+}) {
   const ref = useRef<THREE.Mesh>(null)
   const incR = (inc * Math.PI) / 180
 
@@ -117,8 +129,31 @@ function Satellite({ r, speed, inc, phase }: { r: number; speed: number; inc: nu
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.022, 8, 8]} />
-      <meshBasicMaterial color="#ef4444" />
+      <sphereGeometry args={[size, 10, 10]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
+  )
+}
+
+function Moon() {
+  const ref = useRef<THREE.Mesh>(null)
+  const incR = (MOON.inc * Math.PI) / 180
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.elapsedTime * MOON.speed + MOON.phase
+    ref.current.position.set(
+      Math.cos(t) * MOON.r,
+      Math.sin(t) * Math.sin(incR) * MOON.r,
+      Math.sin(t) * MOON.r
+    )
+    ref.current.rotation.y += 0.004
+  })
+
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[MOON.size, 24, 24]} />
+      <meshStandardMaterial color="#b9bec6" emissive="#3a4252" emissiveIntensity={0.18} roughness={0.95} metalness={0.05} />
     </mesh>
   )
 }
