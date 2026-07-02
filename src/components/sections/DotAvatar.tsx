@@ -10,11 +10,11 @@ type Props = {
 
 // Internal geometry resolution (CSS px).
 const RENDER_W = 300
-const GRID_W = 98 // dot density → fine detail
-// Crop the source from the bottom so the framing is head + shoulders (Adam-Hickey
-// proportions), sampling only the top fraction of the photo.
-const SRC_CROP = 0.66
-const MAX_TILT = 0.5 // radians the head nods forward at full scroll (~29°)
+const GRID_W = 98 // dot density — held CONSTANT (detail comes from contrast, not more dots)
+// Crop from the bottom so the framing is head + shoulders (Adam-Hickey scale).
+// A little more of the chest is kept than before.
+const SRC_CROP = 0.74
+const MAX_TILT = 0.52 // radians the head nods forward at full scroll (~30°)
 
 type Dot = {
   cx: number; cy: number; r: number; a: number
@@ -24,14 +24,18 @@ type Dot = {
 }
 
 /**
- * Animated halftone dot-field portrait.
+ * Animated halftone dot-field portrait, rebuilt for clarity + a solid read.
  *
- * The whole field is drawn on a single canvas and re-painted every frame by a
- * continuous rAF loop that reads scroll position directly (so the motion can
- * never "stick"). Only the head (above the neck pivot) nods forward with scroll
- * and the smile flattens; a small idle breathing keeps the figure alive at rest.
- * Background wall is removed with a border flood-fill plus a protected face
- * ellipse, so the whole face is always present and no shadow silhouette remains.
+ * - A continuous rAF loop reads scroll every frame, so the head-tilt + smile
+ *   morph are always live and smooth (verified in-browser). Idle breathing
+ *   keeps the field alive at rest. Ready to be swapped for a GIF later without
+ *   architectural change (the loop simply paints; a GIF would replace paint).
+ * - Background wall removed by high-tolerance border flood-fill + a TIGHT
+ *   protected face ellipse, so the shadow "chat-bubble" lobe is gone but the
+ *   whole face stays.
+ * - A white base pass under the ink dots means the tile grid never shows
+ *   through the figure and dissolves at the sparse edges.
+ * - Detail/contour comes from a wider dot radius + alpha range, not more dots.
  */
 export default function DotAvatar({ src, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -53,7 +57,7 @@ export default function DotAvatar({ src, className }: Props) {
       if (cancelled) return
 
       const srcW = img.width
-      const srcH = Math.round(img.height * SRC_CROP) // cropped from the bottom
+      const srcH = Math.round(img.height * SRC_CROP)
       const aspect = srcH / srcW
       const cssW = RENDER_W
       const cssH = Math.round(cssW * aspect)
@@ -71,15 +75,12 @@ export default function DotAvatar({ src, className }: Props) {
       const diff = (i: number, r: number, g: number, b: number) =>
         Math.abs(data[i] - r) + Math.abs(data[i + 1] - g) + Math.abs(data[i + 2] - b)
 
-      // seed = average of the top row (the wall above the head)
       let sr = 0, sg = 0, sb = 0
       for (let x = 0; x < GRID_W; x++) { const i = at(x, 0); sr += data[i]; sg += data[i + 1]; sb += data[i + 2] }
       sr /= GRID_W; sg /= GRID_W; sb /= GRID_W
 
-      // Aggressive border flood-fill (high tolerance) to erase the wall AND its
-      // shadow. The face is protected below, so a high tolerance is safe.
       const bg = new Uint8Array(GRID_W * GRID_H)
-      const TOL = 212
+      const TOL = 214
       const stack: number[] = []
       const consider = (x: number, y: number) => {
         if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return
@@ -95,9 +96,10 @@ export default function DotAvatar({ src, className }: Props) {
         consider(x + 1, y); consider(x - 1, y); consider(x, y + 1); consider(x, y - 1)
       }
 
-      // Protect the face + torso core so the high-tolerance fill can't bite in.
-      const faceCx = GRID_W * 0.52, faceCy = GRID_H * 0.34
-      const faceRx = GRID_W * 0.30, faceRy = GRID_H * 0.34
+      // TIGHT protected ellipse — covers the face only, not the shadow lobe to
+      // its left, so the "chat-bubble" artifact gets removed.
+      const faceCx = GRID_W * 0.52, faceCy = GRID_H * 0.30
+      const faceRx = GRID_W * 0.22, faceRy = GRID_H * 0.27
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const nx = (x - faceCx) / faceRx, ny = (y - faceCy) / faceRy
@@ -108,10 +110,10 @@ export default function DotAvatar({ src, className }: Props) {
       // ── build dot list ───────────────────────────────────────────────
       const dots: Dot[] = []
       const cell = cssW / GRID_W
-      const maxR = cell * 0.60
-      const neckY = cssH * 0.52 // pivot: head above, shoulders below
-      const mouthCx = cssW * 0.52, mouthCy = cssH * 0.40
-      const mouthRx = cssW * 0.17, mouthRy = cssH * 0.05
+      const maxR = cell * 0.62
+      const neckY = cssH * 0.46
+      const mouthCx = cssW * 0.52, mouthCy = cssH * 0.35
+      const mouthRx = cssW * 0.16, mouthRy = cssH * 0.045
 
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
@@ -122,13 +124,14 @@ export default function DotAvatar({ src, className }: Props) {
           const dark = 1 - L
           const cx = x * cell + cell / 2
           const cy = y * cell + cell / 2
-          const head = cy < neckY ? Math.min(1, (neckY - cy) / (cssH * 0.34)) : 0
+          const head = cy < neckY ? Math.min(1, (neckY - cy) / (cssH * 0.30)) : 0
           const mnx = (cx - mouthCx) / mouthRx, mny = (cy - mouthCy) / mouthRy
           const md = mnx * mnx + mny * mny
           dots.push({
             cx, cy,
-            r: maxR * (0.34 + 0.66 * dark),
-            a: 0.5 + 0.5 * dark,
+            // wider radius + alpha range => more contour, same dot count
+            r: maxR * (0.20 + 0.92 * Math.pow(dark, 0.82)),
+            a: 0.42 + 0.58 * dark,
             seed: (x * 7 + y * 13) % 100,
             head,
             mouth: md < 1 ? 1 - md : 0,
@@ -142,49 +145,60 @@ export default function DotAvatar({ src, className }: Props) {
       canvas.height = Math.round(cssH * dpr)
       const ctx = canvas.getContext('2d')!
       ctx.scale(dpr, dpr)
+      const whiteR = cell * 0.62 // fills cell gaps so tiles never show through
 
       const draw = (reveal: number, tilt: number, tMs: number) => {
         ctx.clearRect(0, 0, cssW, cssH)
-        ctx.fillStyle = '#0a1628'
         const cosT = Math.cos(tilt)
         const idle = prefersReduced ? 0 : 1
-        for (const d of dots) {
+
+        // Resolve each dot's animated position once (shared by both passes).
+        const px: number[] = []
+        const py: number[] = []
+        const pv: number[] = []
+        for (let k = 0; k < dots.length; k++) {
+          const d = dots[k]
           let rv = 1
           if (reveal < 1) {
             const dist = Math.hypot(d.cx - cssW / 2, d.cy - cssH * 0.4)
-            const start = (dist / (cssW * 0.7)) * 0.5
-            rv = Math.min(1, Math.max(0, (reveal - start) / 0.5))
-            if (rv <= 0) continue
+            const startR = (dist / (cssW * 0.7)) * 0.5
+            rv = Math.min(1, Math.max(0, (reveal - startR) / 0.5))
           }
-
-          let dx = d.cx
-          let dy = d.cy
-
-          // head nods forward around the neck pivot (foreshorten + drop)
+          let dx = d.cx, dy = d.cy
           if (d.head > 0 && tilt > 0.0001) {
             const rel = d.cy - neckY
-            const foreshort = rel * cosT
-            const drop = (-rel) * (1 - cosT) * 0.9
-            dy = neckY + (foreshort + drop) * d.head + rel * (1 - d.head)
+            dy = neckY + (rel * cosT + (-rel) * (1 - cosT) * 0.9) * d.head + rel * (1 - d.head)
           }
-
-          // smile flattens as the head tilts (push mouth corners down)
           if (d.mouth > 0 && tilt > 0.0001) {
             const relX = (d.cx - mouthCx) / mouthRx
             dy += relX * relX * 4.5 * d.mouth * (tilt / MAX_TILT)
           }
-
-          // subtle idle breathing so the field feels alive at rest
           if (idle) {
             const ph = tMs * 0.0016 + d.seed * 0.12
-            dx += Math.cos(ph) * 0.22
-            dy += Math.sin(ph * 1.1) * 0.22
+            dx += Math.cos(ph) * 0.2
+            dy += Math.sin(ph * 1.1) * 0.2
           }
+          px[k] = dx; py[k] = dy; pv[k] = rv
+        }
 
-          const rr = d.r * rv
-          ctx.globalAlpha = d.a * rv
+        // Pass 1 — white base so the tile grid never shows through the figure.
+        ctx.fillStyle = '#ffffff'
+        for (let k = 0; k < dots.length; k++) {
+          if (pv[k] <= 0) continue
+          ctx.globalAlpha = 0.92 * pv[k]
           ctx.beginPath()
-          ctx.arc(dx, dy, rr, 0, Math.PI * 2)
+          ctx.arc(px[k], py[k], whiteR * Math.max(0.7, pv[k]), 0, Math.PI * 2)
+          ctx.fill()
+        }
+
+        // Pass 2 — ink dots (the portrait).
+        ctx.fillStyle = '#0a1628'
+        for (let k = 0; k < dots.length; k++) {
+          if (pv[k] <= 0) continue
+          const d = dots[k]
+          ctx.globalAlpha = d.a * pv[k]
+          ctx.beginPath()
+          ctx.arc(px[k], py[k], d.r * pv[k], 0, Math.PI * 2)
           ctx.fill()
         }
         ctx.globalAlpha = 1
@@ -195,9 +209,6 @@ export default function DotAvatar({ src, className }: Props) {
         return Math.min(1, Math.max(0, window.scrollY / (vh * 0.5))) * MAX_TILT
       }
 
-      // Continuous loop: always running while the avatar is near the top of the
-      // page, so scroll changes are reflected immediately and smoothly. When the
-      // hero is well out of view we skip the paint (cheap) but keep polling.
       let start = 0
       let curTilt = 0
       const frame = (t: number) => {
@@ -229,10 +240,8 @@ export default function DotAvatar({ src, className }: Props) {
       role="img"
       aria-label="Animated dot-style portrait of Ashwin Anand"
       style={{
-        // Rounded edges + a low, soft bottom fade so the figure dissolves into
-        // the page without a hard photo edge or a background circle.
-        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 99%)',
-        maskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 99%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
+        maskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
         borderRadius: 20,
       }}
     />

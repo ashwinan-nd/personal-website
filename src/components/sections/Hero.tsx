@@ -69,7 +69,7 @@ export default function Hero() {
           {/* Dot avatar — scroll-driven head tilt */}
           <div className="relative flex items-center justify-center shrink-0">
             <motion.div
-              className="relative w-[150px] sm:w-[185px] md:w-[236px]"
+              className="relative w-[172px] sm:w-[210px] md:w-[262px]"
               initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
               animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, ease: EASE }}
