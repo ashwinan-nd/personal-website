@@ -43,15 +43,27 @@ const projects: Project[] = [
           label: 'What it does',
           bullets: [
             'Renders my photo as a live dot-matrix avatar entirely in the browser, with background removal calibrated from the source image.',
-            'Tilts the avatar forward as you scroll, mapped continuously to scroll progress.',
+            'Nods the head forward as you scroll, mapped continuously to scroll progress.',
             'Interactive 3D interest tiles: an orbital globe, an explodable GPU, and a live market chart.',
             'Live prices run through a server proxy so the API key never reaches the client.',
           ],
         },
         {
-          label: 'How it is built',
-          body:
-            'Next.js App Router with React and TypeScript. Three.js and React Three Fiber for the 3D, Framer Motion for choreography, Lenis for smooth scroll, and a canvas halftone renderer for the avatar.',
+          label: 'Design plan',
+          bullets: [
+            'One calm system: a single navy ink, a soft neomorphic surface, and a tile-grid background that ties every section together.',
+            'Motion earns attention, never fights it. Reveals are staggered, scroll is smooth, and every animation respects reduced-motion.',
+            'A strict layout contract so sections never collide and titles always have breathing room on desktop and mobile.',
+          ],
+        },
+        {
+          label: 'Engineering plan',
+          bullets: [
+            'Next.js App Router, React, and TypeScript, with the heavy 3D code-split behind dynamic imports so first paint stays fast.',
+            'A canvas halftone renderer samples the photo, removes the background by flood-fill, and animates the head on a single rAF loop.',
+            'Finnhub and market data proxied through server route handlers; the key lives only in an env var, never in the client bundle.',
+            'Next: automated visual-regression snapshots and a Lighthouse budget in CI.',
+          ],
         },
         {
           label: 'Status',
@@ -75,7 +87,7 @@ const projects: Project[] = [
         {
           label: 'Problem',
           body:
-            'Orbital data is scattered and hard to reason about. I wanted one place to see the whole sky and plan a launch against it.',
+            'As more orbital objects and infrastructure launch into orbit, the more management and tracking we need as missions to deep space and interplanetary travel become more abundant. The data to reason about that is scattered. I wanted one place to see the whole sky and plan a launch against it.',
         },
         {
           label: 'What it does',
@@ -87,9 +99,21 @@ const projects: Project[] = [
           ],
         },
         {
-          label: 'How it is built',
-          body:
-            'Vite and vanilla JavaScript for a tight bundle, Three.js for the 3D scene, satellite.js for SGP4 propagation, mathjs for the trajectory math, and GSAP for camera moves.',
+          label: 'Design plan',
+          bullets: [
+            'Mission-control aesthetic: dark canvas, category-colored objects, and a left rail of mission parameters that never blocks the 3D view.',
+            'Legibility at 33k points: color-code by object class, fade distant debris, and let search pull a single object out of the swarm.',
+            'Three modes (Earth, Trajectory, Moon) that share one camera language so switching never disorients.',
+          ],
+        },
+        {
+          label: 'Engineering plan',
+          bullets: [
+            'Vite + vanilla JS for a tight bundle; Three.js instanced points so tens of thousands of objects stay at 60fps.',
+            'satellite.js for SGP4 propagation, mathjs for the transfer-orbit math, and GSAP for camera moves.',
+            'Catalog fetched from CelesTrak / N2YO / SATCAT and cached; propagation runs off the main thread.',
+            'Next: a physics-accurate lunar transfer model and collision-risk scoring across the tracked set.',
+          ],
         },
         {
           label: 'Status',
@@ -105,19 +129,19 @@ export default function OpenSource() {
   const active = projects.find((p) => p.id === openDigest) ?? null
 
   return (
-    <section id="opensource" className="relative bg-white pt-28 pb-36 overflow-hidden">
+    <section id="opensource" className="relative bg-white pt-40 md:pt-48 pb-44 overflow-hidden">
       <div className="mx-auto max-w-5xl px-6">
-        {/* Header — "Open source" label removed */}
+        {/* Header — left-aligned title with page margin, subtitle beneath */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: EASE }}
-          className="mb-16"
+          className="mb-20"
         >
           <h2
             className="font-bold text-[#0a1628] leading-[0.92] tracking-[-0.04em]"
-            style={{ fontSize: 'clamp(36px, 5vw, 64px)', marginBottom: 'clamp(16px, 2.5vh, 24px)' }}
+            style={{ fontSize: 'clamp(36px, 5vw, 64px)', marginBottom: 'clamp(22px, 3.5vh, 34px)' }}
           >
             Exploring ideas
             <br />
@@ -195,8 +219,9 @@ function ProjectCard({
         </span>
       </a>
 
-      {/* Body */}
-      <div className="flex flex-col flex-1 p-7">
+      {/* Body — taller pill; description clamped to 2 lines; chips and CTA
+          kept apart so they never collide. */}
+      <div className="flex flex-col flex-1 p-7 pt-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="font-mono text-[10px] tracking-[0.26em] uppercase text-[#1b3a6b]/40">
             {project.tagline}
@@ -210,7 +235,10 @@ function ProjectCard({
         >
           {project.name}
         </a>
-        <p className="mt-3 text-[14px] text-[#0a1628]/55 leading-relaxed">
+        <p
+          className="mt-3 text-[14px] text-[#0a1628]/55 leading-relaxed overflow-hidden"
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', minHeight: '2.8em' }}
+        >
           {project.description}
         </p>
 
@@ -225,14 +253,16 @@ function ProjectCard({
           ))}
         </div>
 
-        {/* Long narrow "Read Product Digest" button */}
+        {/* Long narrow "Read Product Digest" button — pushed to the bottom */}
         <button
           type="button"
           onClick={onToggleDigest}
           aria-expanded={isOpen}
-          className="mt-6 w-full py-3 rounded-full font-mono text-[11px] tracking-[0.2em] uppercase text-white bg-[#0a1628] hover:bg-[#1b3a6b] transition-colors"
+          className="mt-auto pt-7 w-full flex justify-center"
         >
-          {isOpen ? 'Hide Product Digest' : 'Read Product Digest'}
+          <span className="w-full py-3 rounded-full text-center font-mono text-[11px] tracking-[0.2em] uppercase text-white bg-[#0a1628] hover:bg-[#1b3a6b] transition-colors">
+            {isOpen ? 'Hide Product Digest' : 'Read Product Digest'}
+          </span>
         </button>
       </div>
     </motion.div>
@@ -248,7 +278,7 @@ function ProductDigest({ project, onClose }: { project: Project; onClose: () => 
       transition={{ duration: 0.5, ease: EASE }}
       className="overflow-hidden"
     >
-      <div className="relative mt-7 rounded-3xl bg-[#f5f7fb] shadow-[0_12px_48px_rgba(10,22,40,0.08)]">
+      <div className="relative mt-10 rounded-3xl bg-[#f5f7fb] shadow-[0_16px_56px_rgba(10,22,40,0.12)] ring-1 ring-[#0a1628]/[0.06]">
         {/* Close */}
         <button
           type="button"
