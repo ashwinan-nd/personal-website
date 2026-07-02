@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const TOKEN = 'd853ibpr01qrqbno6jf0d853ibpr01qrqbno6jfg'
+const TOKEN = process.env.FINNHUB_API_KEY ?? ''
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)

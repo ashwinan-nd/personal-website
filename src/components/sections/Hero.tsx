@@ -1,9 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  useSpring,
+} from 'framer-motion'
+import dynamic from 'next/dynamic'
 import TileGrid from '@/components/ui/TileGrid'
 import GlassButton from '@/components/ui/GlassButton'
+
+const DotAvatar = dynamic(() => import('./DotAvatar'), { ssr: false })
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -23,17 +32,28 @@ export default function Hero() {
     return () => observer.disconnect()
   }, [])
 
-  const fromLeft = shouldReduceMotion
-    ? {}
-    : { initial: { opacity: 0, x: -56 }, animate: { opacity: 1, x: 0 } }
+  // Scroll-progress-driven head tilt: 0deg at top → forward nod as you scroll
+  // down through the hero, reverses cleanly on scroll up.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end start'],
+  })
+  const tiltRaw = useTransform(scrollYProgress, [0, 1], [0, 21])
+  const tilt = useSpring(tiltRaw, { stiffness: 110, damping: 24, mass: 0.4 })
 
-  const fromRight = shouldReduceMotion
-    ? {}
-    : { initial: { opacity: 0, x: 56 }, animate: { opacity: 1, x: 0 } }
+  // Line-reveal (Adam-Hickey style): each line rises out of a clip mask.
+  const lineReveal = (delay: number) =>
+    shouldReduceMotion
+      ? {}
+      : {
+          initial: { y: '112%' },
+          animate: { y: '0%' },
+          transition: { duration: 1.0, ease: EASE, delay },
+        }
 
   const fromBelow = shouldReduceMotion
     ? {}
-    : { initial: { opacity: 0, y: 28 }, animate: { opacity: 1, y: 0 } }
+    : { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } }
 
   return (
     <section
@@ -58,37 +78,63 @@ export default function Hero() {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-6">
-        {/* Name */}
-        <motion.h1
-          {...fromLeft}
-          transition={{ duration: 0.9, ease: EASE, delay: 0.05 }}
-          className="font-bold text-[#0a1628] leading-[0.9] tracking-[-0.045em] select-none"
-          style={{ fontSize: 'clamp(60px, 10vw, 120px)', marginBottom: 'clamp(28px, 4vh, 52px)' }}
-        >
-          Ashwin
-          <br />
-          Anand
-        </motion.h1>
+      <div className="relative z-10 flex flex-col items-center px-6">
+        {/* Avatar + name unit */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
+          {/* Dot avatar with local tile fade + scroll head tilt */}
+          <div className="relative flex items-center justify-center shrink-0">
+            {/* Local tile fade — solid-ish backdrop so the figure reads clean */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                inset: '-22%',
+                background:
+                  'radial-gradient(ellipse 58% 62% at 50% 46%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.9) 42%, rgba(255,255,255,0) 78%)',
+              }}
+            />
+            <motion.div
+              className="relative w-[190px] sm:w-[230px] md:w-[290px]"
+              style={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      rotateX: tilt,
+                      transformPerspective: 950,
+                      transformOrigin: 'center 88%',
+                    }
+              }
+              initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
+              animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+              transition={{ duration: 0.9, ease: EASE }}
+            >
+              <DotAvatar src="/ashwin.png" className="block w-full h-auto" />
+            </motion.div>
+          </div>
 
-        {/* Tagline */}
-        <motion.p
-          {...fromRight}
-          transition={{ duration: 0.9, ease: EASE, delay: 0.18 }}
-          className="text-[#0a1628]/48 tracking-[-0.01em] select-none"
-          style={{
-            fontSize: 'clamp(16px, 2vw, 22px)',
-            marginBottom: 'clamp(28px, 4vh, 52px)',
-          }}
-        >
-          Innovating for the future.
-        </motion.p>
+          {/* Name — clip-reveal per line */}
+          <h1
+            className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
+            style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
+          >
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span className="block" {...lineReveal(0.1)}>
+                Ashwin
+              </motion.span>
+            </span>
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span className="block" {...lineReveal(0.22)}>
+                Anand
+              </motion.span>
+            </span>
+          </h1>
+        </div>
 
-        {/* Nav buttons */}
+        {/* Nav buttons — under the avatar + name unit */}
         <motion.div
           {...fromBelow}
-          transition={{ duration: 0.8, ease: EASE, delay: 0.32 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.5 }}
           className="flex items-center justify-center gap-3 flex-wrap"
+          style={{ marginTop: 'clamp(32px, 5vh, 60px)' }}
         >
           <GlassButton href="#passions">Passions</GlassButton>
           <GlassButton href="#opensource">Public Projects</GlassButton>
