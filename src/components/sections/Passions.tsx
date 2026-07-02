@@ -30,8 +30,7 @@ const interests: Interest[] = [
     category: 'Cosmos',
     headline: 'Space',
     blurb:
-      "Space is the new frontier, and we are in the middle of the 2nd Space Race. Useful innovation is growing. My bet: we'll be on Mars by 2033, and I'll be on the Moon by 2035. Read my paper on LinkedIn!",
-    link: { label: 'Read my paper on LinkedIn', href: 'https://www.linkedin.com/in/ashwinanand/' },
+      "Space is the new frontier, and we are in the middle of the 2nd Space Race. Useful innovation is growing. My bet: we'll be on Mars by 2033, and I'll be on the Moon by 2035.",
     Visual: GlobeVisual,
     natH: 300,
   },
@@ -101,25 +100,25 @@ export default function Passions() {
 
   return (
     <section id="passions" className="relative bg-white py-24 md:py-32 overflow-hidden">
-      {/* Header */}
+      {/* Header — left-aligned with a left page margin; grid centered below */}
       <motion.div
         initial={reduce ? undefined : { opacity: 0, y: 24 }}
         whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.8, ease: EASE }}
-        className="text-center mb-14 md:mb-20 px-6"
+        className="mx-auto max-w-[880px] px-6 mb-14 md:mb-20 text-left"
       >
         <p className="font-mono text-[11px] tracking-[0.3em] uppercase text-[#1b3a6b]/40 mb-4">
           Interests
         </p>
         <h2
-          className="font-bold text-[#0a1628] leading-[0.92] tracking-[-0.04em] mx-auto"
+          className="font-bold text-[#0a1628] leading-[0.92] tracking-[-0.04em]"
           style={{ fontSize: 'clamp(34px, 5vw, 60px)' }}
         >
-          Things I&apos;m deep on.
+          My Passions Explained
         </h2>
         <p className="mt-5 text-[15px] text-[#0a1628]/45">
-          Tap any tile to flip it over.
+          Tap a tile to bring it to center and read the back.
         </p>
       </motion.div>
 
@@ -177,6 +176,15 @@ function InterestCard({
       style={CARD_STYLE}
       aria-label={`${interest.headline} — open details`}
     >
+      {/* Expand affordance — top-right corner (no eyebrow label) */}
+      <span
+        className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full grid place-items-center text-[#1b3a6b]/45 group-hover:text-[#1b3a6b] transition-colors"
+        style={{ background: 'rgba(255,255,255,0.72)', boxShadow: 'inset 0 0 0 1px rgba(10,22,40,0.06)' }}
+        aria-hidden
+      >
+        ⤢
+      </span>
+
       {/* Scaled, non-interactive preview */}
       <div style={{ height: H, overflow: 'hidden', borderRadius: 18 }} className="pointer-events-none">
         <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top left' }}>
@@ -184,23 +192,10 @@ function InterestCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <div>
-          <p className="font-mono text-[10px] tracking-[0.28em] uppercase text-[#1b3a6b]/42">
-            {interest.category}
-          </p>
-          <h3 className="font-bold text-[#0a1628] text-[21px] tracking-tight leading-tight mt-1">
-            {interest.headline}
-          </h3>
-        </div>
-        <span
-          className="shrink-0 w-9 h-9 rounded-full grid place-items-center text-[#1b3a6b]/50 group-hover:text-[#1b3a6b] transition-colors"
-          style={{ background: 'rgba(255,255,255,0.7)', boxShadow: 'inset 0 0 0 1px rgba(10,22,40,0.06)' }}
-          aria-hidden
-        >
-          ⤢
-        </span>
-      </div>
+      {/* Centered pill title */}
+      <h3 className="mt-4 text-center font-bold text-[#0a1628] text-[21px] tracking-tight leading-tight">
+        {interest.headline}
+      </h3>
     </motion.div>
   )
 }

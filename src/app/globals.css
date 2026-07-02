@@ -13,10 +13,14 @@
   --border: rgba(10, 22, 40, 0.09);
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* Kept in @layer base so Tailwind's utility layer (padding and margin classes)
+   can override it. An unlayered star reset would zero every padding utility. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
 }
 
 html {
