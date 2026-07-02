@@ -97,22 +97,8 @@ export default function CookingVisual() {
         </g>
 
         {/* ── Food (pancake + toppings) — launches and flips ───────── */}
-        <g style={{ transformOrigin: '170px 168px', animation: anim('ck-toss', '2.8s', 'cubic-bezier(0.4,0,0.2,1)') }}>
-          <g style={{ transformOrigin: '170px 168px', animation: anim('ck-flip', '2.8s', 'linear') }}>
-            <ellipse cx="170" cy="168" rx="46" ry="15" fill="url(#ckPancake)" />
-            <ellipse cx="170" cy="164" rx="46" ry="13.5" fill="#e3ad64" />
-            {/* browning spots */}
-            <circle cx="156" cy="162" r="3.2" fill="#9c6a2e" opacity="0.6" />
-            <circle cx="182" cy="166" r="2.6" fill="#9c6a2e" opacity="0.55" />
-            <circle cx="170" cy="160" r="2.2" fill="#8a5a24" opacity="0.5" />
-            {/* toppings */}
-            <circle cx="162" cy="160" r="3" fill="#c0392b" />
-            <rect x="176" y="158" width="7" height="7" rx="1.6" fill="#4e8a3f" />
-            <circle cx="172" cy="166" r="2.4" fill="#e6b23a" />
-          </g>
-        </g>
-
-        {/* ── Pan (jerks up during toss) ───────────────────────────── */}
+        {/* ── Pan (jerks up during toss) — drawn BEFORE the food so the food
+             always layers above the pan ─────────────────────────────── */}
         <g style={{ transformOrigin: '170px 182px', animation: anim('ck-pan', '2.8s', 'cubic-bezier(0.4,0,0.2,1)') }}>
           {/* Handle with grip rivets */}
           <g transform="rotate(-9 216 184)">
@@ -132,6 +118,22 @@ export default function CookingVisual() {
           {/* Rim rivets where handle meets body */}
           <circle cx="238" cy="180" r="2.4" fill="#8b9099" />
           <circle cx="238" cy="187" r="2.4" fill="#8b9099" />
+        </g>
+
+        {/* ── Food (pancake + toppings) — launches and flips, always above pan */}
+        <g style={{ transformOrigin: '170px 168px', animation: anim('ck-toss', '2.8s', 'cubic-bezier(0.4,0,0.2,1)') }}>
+          <g style={{ transformOrigin: '170px 168px', animation: anim('ck-flip', '2.8s', 'linear') }}>
+            <ellipse cx="170" cy="168" rx="46" ry="15" fill="url(#ckPancake)" />
+            <ellipse cx="170" cy="164" rx="46" ry="13.5" fill="#e3ad64" />
+            {/* browning spots */}
+            <circle cx="156" cy="162" r="3.2" fill="#9c6a2e" opacity="0.6" />
+            <circle cx="182" cy="166" r="2.6" fill="#9c6a2e" opacity="0.55" />
+            <circle cx="170" cy="160" r="2.2" fill="#8a5a24" opacity="0.5" />
+            {/* toppings */}
+            <circle cx="162" cy="160" r="3" fill="#c0392b" />
+            <rect x="176" y="158" width="7" height="7" rx="1.6" fill="#4e8a3f" />
+            <circle cx="172" cy="166" r="2.4" fill="#e6b23a" />
+          </g>
         </g>
 
         <style>{`

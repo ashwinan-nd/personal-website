@@ -187,7 +187,7 @@ export default function GlobeVisual() {
   return (
     <div className="w-full h-72 relative select-none" data-hover>
       <Canvas
-        camera={{ position: [0, 0.8, 3.4], fov: 40 }}
+        camera={{ position: [0, 0.35, 4.3], fov: 38 }}
         gl={{ antialias: true, alpha: true }}
         frameloop="always"
       >
@@ -203,6 +203,7 @@ export default function GlobeVisual() {
           enableZoom={false}
           enablePan={false}
           rotateSpeed={0.65}
+          target={[0, 0, 0]}
           autoRotate
           autoRotateSpeed={0.6}
           minPolarAngle={Math.PI * 0.1}
