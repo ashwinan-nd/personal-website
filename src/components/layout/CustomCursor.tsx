@@ -12,6 +12,10 @@ export default function CustomCursor() {
     const el = outerRef.current
     if (!el) return
 
+    // Respect reduced-motion: don't run the custom cursor at all (globals.css
+    // restores the native cursor in that case).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     // Direct DOM transform — truly zero latency
     const onMove = (e: MouseEvent) => {
       el.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`

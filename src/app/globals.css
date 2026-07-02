@@ -23,6 +23,26 @@ html {
   scroll-behavior: auto;
 }
 
+/* Anchor targets clear the fixed nav so titles aren't cut off at the top */
+#hero, #passions, #opensource, #contact {
+  scroll-margin-top: 96px;
+}
+
+/* Section separation contract: every top-level section is its own opaque,
+   isolated stacking context so scroll-linked entrance transforms on one
+   section can never visually bleed into an adjacent one. */
+main > section {
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+}
+
+/* When the menu is open, hide the hero's duplicate nav pills */
+body.menu-open .hero-nav {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 body {
   background: var(--bg);
   color: var(--text-primary);
@@ -62,5 +82,9 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* Restore the native cursor for users who prefer reduced motion */
+  body, *, *::before, *::after {
+    cursor: auto !important;
   }
 }

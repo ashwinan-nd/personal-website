@@ -9,19 +9,41 @@ const links = [
   { label: 'Contact', href: '#contact' },
 ]
 
+// Header LinkedIn — canonical profile handle (verify if this ever 404s).
+const LINKEDIN_URL = 'https://www.linkedin.com/in/ashwin-anand-/'
+const GITHUB_URL = 'https://github.com/ashwinan-nd/'
+
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  // Outside-click, Escape, and scroll all close the menu.
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
+
+  // Close on scroll so the menu never lingers over section content.
+  useEffect(() => {
+    if (!open) return
+    const onScroll = () => setOpen(false)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [open])
+
+  // Toggle a body class so the hero can hide its duplicate nav pills.
+  useEffect(() => {
+    document.body.classList.toggle('menu-open', open)
+    return () => document.body.classList.remove('menu-open')
+  }, [open])
 
   const buttonStyle: React.CSSProperties = {
     width: 42,
@@ -41,8 +63,9 @@ export default function Navbar() {
       ref={menuRef}
       className="fixed top-5 right-5 z-50 flex flex-col items-center gap-[20px]"
     >
-      {/* Menu toggle */}
-      <div className="flex flex-col items-end gap-2">
+      {/* Menu toggle — dropdown is absolutely positioned so opening it never
+          shifts the icons below. */}
+      <div className="relative flex flex-col items-end">
         <motion.button
           onClick={() => setOpen((o) => !o)}
           style={{
@@ -52,28 +75,32 @@ export default function Navbar() {
           }}
           whileTap={{ scale: 0.94 }}
           aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
         >
           <HamburgerIcon open={open} />
         </motion.button>
 
         <AnimatePresence>
           {open && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.88, y: -8 }}
+            <motion.nav
+              initial={{ opacity: 0, scale: 0.9, y: -8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.88, y: -8 }}
+              exit={{ opacity: 0, scale: 0.9, y: -8 }}
               transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
               style={{
+                position: 'absolute',
+                top: 50,
+                right: 0,
                 transformOrigin: 'top right',
-                background: 'rgba(255,255,255,0.88)',
+                background: 'rgba(255,255,255,0.9)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 border: '1px solid rgba(10,22,40,0.1)',
-                borderRadius: 18,
+                borderRadius: 16,
                 boxShadow:
-                  '0 8px 32px rgba(10,22,40,0.1), 0 2px 8px rgba(10,22,40,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-                padding: '8px 6px',
-                minWidth: 188,
+                  '0 12px 36px rgba(10,22,40,0.14), 0 2px 8px rgba(10,22,40,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+                padding: 7,
+                width: 210,
               }}
             >
               {links.map((link, i) => (
@@ -84,19 +111,25 @@ export default function Navbar() {
                   initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04, duration: 0.13 }}
-                  className="flex items-center px-4 py-2.5 rounded-xl text-[13px] font-medium text-[#0a1628]/70 hover:text-[#0a1628] hover:bg-[#0a1628]/[0.05] transition-colors"
+                  className="group flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium text-[#0a1628]/72 hover:text-[#0a1628] hover:bg-[#0a1628]/[0.055] active:bg-[#0a1628]/[0.09] transition-colors"
                 >
-                  {link.label}
+                  <span className="flex items-center gap-2.5">
+                    <LinkIcon which={link.label} />
+                    {link.label}
+                  </span>
+                  <span className="text-[#0a1628]/25 group-hover:text-[#0a1628]/55 group-hover:translate-x-0.5 transition-all">
+                    →
+                  </span>
                 </motion.a>
               ))}
-            </motion.div>
+            </motion.nav>
           )}
         </AnimatePresence>
       </div>
 
       {/* LinkedIn icon */}
       <motion.a
-        href="https://www.linkedin.com/in/ashwin-anand-/"
+        href={LINKEDIN_URL}
         target="_blank"
         rel="noopener noreferrer"
         style={{ ...buttonStyle, background: 'rgba(255,255,255,0.82)' }}
@@ -110,7 +143,7 @@ export default function Navbar() {
 
       {/* GitHub icon */}
       <motion.a
-        href="https://github.com/ashwinan-nd/"
+        href={GITHUB_URL}
         target="_blank"
         rel="noopener noreferrer"
         style={{ ...buttonStyle, background: 'rgba(255,255,255,0.82)' }}
@@ -123,6 +156,15 @@ export default function Navbar() {
       </motion.a>
     </div>
   )
+}
+
+function LinkIcon({ which }: { which: string }) {
+  const c = 'w-3.5 h-3.5 text-[#1b3a6b]/55 group-hover:text-[#1b3a6b] transition-colors'
+  if (which === 'Passions')
+    return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.9 2 6.5 5 6.5c2 0 3 1.5 3 1.5s1-1.5 3-1.5c3 0 4.1 3.4 2.5 6C19 16.65 12 21 12 21z"/></svg>
+  if (which === 'Public Projects')
+    return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+  return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v12H5.2L4 17.2z"/></svg>
 }
 
 function HamburgerIcon({ open }: { open: boolean }) {

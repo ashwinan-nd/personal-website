@@ -1,13 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-  useSpring,
-} from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import TileGrid from '@/components/ui/TileGrid'
 import GlassButton from '@/components/ui/GlassButton'
@@ -31,15 +25,6 @@ export default function Hero() {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-
-  // Scroll-progress-driven head tilt: 0deg at top → forward nod as you scroll
-  // down through the hero, reverses cleanly on scroll up.
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  })
-  const tiltRaw = useTransform(scrollYProgress, [0, 1], [0, 21])
-  const tilt = useSpring(tiltRaw, { stiffness: 110, damping: 24, mass: 0.4 })
 
   // Line-reveal (Adam-Hickey style): each line rises out of a clip mask.
   const lineReveal = (delay: number) =>
@@ -93,16 +78,7 @@ export default function Hero() {
               }}
             />
             <motion.div
-              className="relative w-[190px] sm:w-[230px] md:w-[290px]"
-              style={
-                shouldReduceMotion
-                  ? undefined
-                  : {
-                      rotateX: tilt,
-                      transformPerspective: 950,
-                      transformOrigin: 'center 88%',
-                    }
-              }
+              className="relative w-[150px] sm:w-[185px] md:w-[236px]"
               initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
               animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, ease: EASE }}
@@ -133,7 +109,7 @@ export default function Hero() {
         <motion.div
           {...fromBelow}
           transition={{ duration: 0.8, ease: EASE, delay: 0.5 }}
-          className="flex items-center justify-center gap-3 flex-wrap"
+          className="hero-nav flex items-center justify-center gap-3 flex-wrap transition-opacity duration-200"
           style={{ marginTop: 'clamp(32px, 5vh, 60px)' }}
         >
           <GlassButton href="#passions">Passions</GlassButton>
