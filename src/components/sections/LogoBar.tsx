@@ -5,44 +5,40 @@ import { useReducedMotion } from 'framer-motion'
 /**
  * Grayed "worked with" marquee between the hero and interests.
  *
- * Company names are rendered as clean, uniform grayscale wordmarks in the
- * site's own typeface (not trademarked logo artwork). If you drop an official
- * logo asset you're entitled to use at /public/logos/<slug>.svg, set `asset`
- * on that entry and it renders the real logo, auto-grayscaled via CSS filter.
- *
- * Continuous seamless loop with symmetric edge fades; pauses for reduced-motion.
+ * Real company logo files (supplied by Ashwin, in /public/logos) are rendered
+ * grayscaled with preserved aspect ratio. Any without a file fall back to a
+ * clean grayscale wordmark. Continuous seamless loop with symmetric edge fades.
  */
-type Logo = { name: string; slug: string; asset?: boolean; tracking?: string; weight?: number; lower?: boolean }
+type Logo = { name: string; src?: string; wordmark?: string; lower?: boolean; weight?: number; tracking?: string; h?: number }
 
 const LOGOS: Logo[] = [
-  { name: 'ASUW', slug: 'asuw', weight: 800, tracking: '-0.01em' },
-  { name: 'Seattle Kraken', slug: 'kraken', weight: 600, tracking: '0.14em' },
-  { name: 'WWF', slug: 'wwf', weight: 800, tracking: '0.02em' },
-  { name: 'Zuper', slug: 'zuper', weight: 600, lower: true, tracking: '-0.01em' },
-  { name: 'Tesla', slug: 'tesla', weight: 500, tracking: '0.36em' },
-  { name: 'Delta', slug: 'delta', weight: 600, tracking: '0.12em' },
-  { name: 'AWS', slug: 'aws', weight: 800, lower: true, tracking: '0.02em' },
+  { name: 'ASUW', src: '/logos/asuw.png', h: 30 },
+  { name: 'Seattle Kraken', wordmark: 'Kraken', weight: 600, tracking: '0.16em' },
+  { name: 'World Wildlife Fund', src: '/logos/wwf.webp', h: 40 },
+  { name: 'Zuper', src: '/logos/zuper.png', h: 26 },
+  { name: 'Tesla', src: '/logos/tesla.png', h: 17 },
+  { name: 'Delta Air Lines', src: '/logos/delta.png', h: 26 },
+  { name: 'AWS', src: '/logos/aws.jpeg', h: 30 },
 ]
 
 function Mark({ logo }: { logo: Logo }) {
-  if (logo.asset) {
-    // Real logo asset (grayscaled). Add the file to /public/logos/<slug>.svg.
+  if (logo.src) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
-        src={`/logos/${logo.slug}.svg`}
+        src={logo.src}
         alt={logo.name}
-        className="h-6 md:h-7 w-auto"
-        style={{ filter: 'grayscale(1) brightness(0) opacity(0.34)' }}
+        style={{ height: logo.h ?? 28, width: 'auto', filter: 'grayscale(1) opacity(0.45) contrast(1.05)' }}
+        className="object-contain"
       />
     )
   }
   return (
     <span
       style={{ fontWeight: logo.weight ?? 700, letterSpacing: logo.tracking ?? '0.02em', fontSize: 22, lineHeight: 1 }}
-      className={logo.lower ? 'lowercase' : logo.name.length <= 4 ? '' : 'uppercase text-[0.86em]'}
+      className={logo.lower ? 'lowercase' : 'uppercase text-[0.86em]'}
     >
-      {logo.name === 'Seattle Kraken' ? 'Kraken' : logo.name}
+      {logo.wordmark ?? logo.name}
     </span>
   )
 }
@@ -54,7 +50,7 @@ export default function LogoBar() {
   return (
     <section
       aria-label="Companies Ashwin has worked with"
-      className="relative bg-white w-full pt-6 pb-4 overflow-hidden"
+      className="relative bg-white w-full pt-2 pb-4 overflow-hidden"
     >
       <p className="text-center font-mono text-[10px] tracking-[0.34em] uppercase text-[#0a1628]/32 mb-6">
         Worked with
@@ -73,10 +69,10 @@ export default function LogoBar() {
         >
           {strip.map((logo, i) => (
             <li
-              key={`${logo.slug}-${i}`}
+              key={`${logo.name}-${i}`}
               aria-label={logo.name}
               aria-hidden={i >= LOGOS.length}
-              className="shrink-0 hover:text-[#0a1628]/55 transition-colors select-none"
+              className="shrink-0 select-none flex items-center"
             >
               <Mark logo={logo} />
             </li>

@@ -75,7 +75,7 @@ const interests: Interest[] = [
     category: 'Craft',
     headline: 'Cooking',
     blurb:
-      'Cooking is engineering you can eat. Heat, timing, and ratios run as a tight loop. I optimize the process and the plate.',
+      "Cooking is what I'd do if I chose a different career route. I love trying new cuisines and recipes, and more importantly I love cooking for those I love. If you have any recommendations, send them my way!",
     Visual: CookingVisual,
     natH: 240,
   },
@@ -186,8 +186,8 @@ function InterestCard({
       </span>
 
       {/* Scaled, non-interactive preview */}
-      <div style={{ height: H, overflow: 'hidden', borderRadius: 18 }} className="pointer-events-none">
-        <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top left' }}>
+      <div style={{ height: H, overflow: 'hidden', borderRadius: 18 }} className="pointer-events-none flex justify-center">
+        <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top center' }}>
           <interest.Visual />
         </div>
       </div>

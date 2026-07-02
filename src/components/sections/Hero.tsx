@@ -13,6 +13,7 @@ const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
   const [tilesActive, setTilesActive] = useState(true)
+  const [nameHover, setNameHover] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
@@ -78,22 +79,46 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* Name — clip-reveal per line */}
-          <h1
-            className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
-            style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
+          {/* Name → tagline hover/focus swap. Both layers occupy the same box
+              (tagline absolute) so nothing shifts; keyboard-focusable. */}
+          <div
+            className="relative inline-block outline-none"
+            tabIndex={0}
+            onMouseEnter={() => setNameHover(true)}
+            onMouseLeave={() => setNameHover(false)}
+            onFocus={() => setNameHover(true)}
+            onBlur={() => setNameHover(false)}
+            aria-label="Ashwin Anand — Building enterprise systems and 0-to-1 systems that make hard problems simple"
           >
-            <span className="block overflow-hidden pb-[0.06em]">
-              <motion.span className="block" {...lineReveal(0.1)}>
-                Ashwin
-              </motion.span>
-            </span>
-            <span className="block overflow-hidden pb-[0.06em]">
-              <motion.span className="block" {...lineReveal(0.22)}>
-                Anand
-              </motion.span>
-            </span>
-          </h1>
+            <motion.h1
+              animate={{ opacity: shouldReduceMotion ? 1 : nameHover ? 0 : 1 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
+              style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
+            >
+              <span className="block overflow-hidden pb-[0.06em]">
+                <motion.span className="block" {...lineReveal(0.1)}>Ashwin</motion.span>
+              </span>
+              <span className="block overflow-hidden pb-[0.06em]">
+                <motion.span className="block" {...lineReveal(0.22)}>Anand</motion.span>
+              </span>
+            </motion.h1>
+
+            {/* Tagline — smaller, same color, left-aligned, ~3-4 words/line */}
+            <motion.p
+              aria-hidden={!nameHover}
+              initial={false}
+              animate={{ opacity: shouldReduceMotion ? 0 : nameHover ? 1 : 0 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              className="absolute inset-0 flex flex-col justify-center font-bold text-[#0a1628] leading-[1.05] tracking-[-0.02em] text-center md:text-left pointer-events-none"
+              style={{ fontSize: 'clamp(24px, 3.4vw, 44px)' }}
+            >
+              <span>Building enterprise systems</span>
+              <span>and 0-to-1 systems</span>
+              <span>that make hard</span>
+              <span>problems simple.</span>
+            </motion.p>
+          </div>
         </div>
 
         {/* Nav buttons — under the avatar + name unit */}
