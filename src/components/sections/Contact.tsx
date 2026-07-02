@@ -45,8 +45,8 @@ export default function Contact() {
         }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 text-center max-w-2xl mx-auto">
+      {/* Content — nudged up slightly */}
+      <div className="relative z-10 text-center max-w-2xl mx-auto" style={{ transform: 'translateY(-3vh)' }}>
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}

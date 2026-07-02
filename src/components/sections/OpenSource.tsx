@@ -129,7 +129,7 @@ export default function OpenSource() {
   const active = projects.find((p) => p.id === openDigest) ?? null
 
   return (
-    <section id="opensource" className="relative bg-white pt-40 md:pt-48 pb-44 overflow-hidden">
+    <section id="opensource" className="relative bg-white pt-28 md:pt-36 pb-44 overflow-hidden">
       <div className="mx-auto max-w-5xl px-6">
         {/* Header — left-aligned title with page margin, subtitle beneath */}
         <motion.div
