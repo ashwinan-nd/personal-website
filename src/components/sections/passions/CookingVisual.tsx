@@ -67,20 +67,22 @@ export default function CookingVisual() {
           <line x1="190" y1="206" x2="190" y2="222" />
         </g>
 
-        {/* ── Gas flame (blue base + flickering orange tongues) ────── */}
-        <g style={{ transformOrigin: '170px 196px', animation: anim('ck-flame', '0.4s', 'ease-in-out') }}>
-          {[150, 162, 170, 178, 190].map((x, i) => (
-            <path
-              key={i}
-              d={`M${x} 200 C${x - 7} 188 ${x - 4} 172 ${x} 160 C${x + 4} 172 ${x + 7} 188 ${x} 200 Z`}
-              fill="url(#ckFlameO)"
-              opacity={0.9}
-              style={{ transformOrigin: `${x}px 196px`, animation: anim(`ck-lick${i % 3}`, `${0.34 + (i % 3) * 0.06}s`, 'ease-in-out') }}
-            />
-          ))}
-          {[156, 170, 184].map((x, i) => (
-            <path key={`b${i}`} d={`M${x} 200 C${x - 4} 192 ${x - 2} 184 ${x} 178 C${x + 2} 184 ${x + 4} 192 ${x} 200 Z`} fill="url(#ckFlameB)" opacity="0.95" />
-          ))}
+        {/* ── Gas flame: real burner anatomy — a row of blue cones (dark inner,
+             lighter outer) with small orange/yellow tips ─────────────── */}
+        <g style={{ transformOrigin: '170px 200px', animation: anim('ck-flame', '0.42s', 'ease-in-out') }}>
+          {[132, 146, 160, 170, 180, 194, 208].map((x, i) => {
+            const h = 26 + (i % 3) * 8 // varied cone heights
+            return (
+              <g key={i} style={{ transformOrigin: `${x}px 202px`, animation: anim(`ck-lick${i % 3}`, `${0.3 + (i % 3) * 0.06}s`, 'ease-in-out') }}>
+                {/* orange/yellow tip */}
+                <path d={`M${x} ${202 - h - 8} C${x - 5} ${202 - h + 4} ${x - 3} ${202 - h + 2} ${x} ${202 - h + 10} C${x + 3} ${202 - h + 2} ${x + 5} ${202 - h + 4} ${x} ${202 - h - 8} Z`} fill="url(#ckFlameO)" opacity="0.9" />
+                {/* outer blue cone */}
+                <path d={`M${x} 202 C${x - 8} 190 ${x - 5} ${202 - h + 6} ${x} ${202 - h} C${x + 5} ${202 - h + 6} ${x + 8} 190 ${x} 202 Z`} fill="url(#ckFlameB)" opacity="0.9" />
+                {/* dark inner cone */}
+                <path d={`M${x} 202 C${x - 3.5} 196 ${x - 2} ${202 - h * 0.6} ${x} ${202 - h * 0.62} C${x + 2} ${202 - h * 0.6} ${x + 3.5} 196 ${x} 202 Z`} fill="#1e63c4" opacity="0.95" />
+              </g>
+            )
+          })}
         </g>
 
         {/* ── Steam ────────────────────────────────────────────────── */}
