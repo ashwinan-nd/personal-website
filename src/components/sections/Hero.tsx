@@ -92,7 +92,7 @@ export default function Hero() {
           >
             <motion.h1
               animate={{ opacity: shouldReduceMotion ? 1 : nameHover ? 0 : 1 }}
-              transition={{ duration: 0.28, ease: EASE }}
+              transition={{ duration: 0.55, ease: EASE }}
               className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
               style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
             >
@@ -109,14 +109,11 @@ export default function Hero() {
               aria-hidden={!nameHover}
               initial={false}
               animate={{ opacity: shouldReduceMotion ? 0 : nameHover ? 1 : 0 }}
-              transition={{ duration: 0.28, ease: EASE }}
-              className="absolute inset-0 flex flex-col justify-center font-bold text-[#0a1628] leading-[1.05] tracking-[-0.02em] text-center md:text-left pointer-events-none"
-              style={{ fontSize: 'clamp(24px, 3.4vw, 44px)' }}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="absolute top-0 left-0 h-full flex flex-col justify-center font-bold text-[#0a1628] leading-[1.08] tracking-[-0.02em] text-left pointer-events-none"
+              style={{ fontSize: 'clamp(22px, 3vw, 40px)', width: 'min(64vw, 540px)' }}
             >
-              <span>Building enterprise systems</span>
-              <span>and 0-to-1 systems</span>
-              <span>that make hard</span>
-              <span>problems simple.</span>
+              Building enterprise systems and 0-to-1 systems that make hard problems simple.
             </motion.p>
           </div>
         </div>

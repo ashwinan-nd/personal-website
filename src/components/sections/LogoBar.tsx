@@ -12,13 +12,13 @@ import { useReducedMotion } from 'framer-motion'
 type Logo = { name: string; src?: string; wordmark?: string; lower?: boolean; weight?: number; tracking?: string; h?: number }
 
 const LOGOS: Logo[] = [
-  { name: 'ASUW', src: '/logos/asuw.png', h: 30 },
-  { name: 'Seattle Kraken', wordmark: 'Kraken', weight: 600, tracking: '0.16em' },
-  { name: 'World Wildlife Fund', src: '/logos/wwf.webp', h: 40 },
-  { name: 'Zuper', src: '/logos/zuper.png', h: 26 },
-  { name: 'Tesla', src: '/logos/tesla.png', h: 17 },
-  { name: 'Delta Air Lines', src: '/logos/delta.png', h: 26 },
-  { name: 'AWS', src: '/logos/aws.jpeg', h: 30 },
+  { name: 'ASUW', src: '/logos/asuw.png', h: 42 },
+  { name: 'Seattle Kraken', src: '/logos/kraken.avif', h: 52 },
+  { name: 'World Wildlife Fund', src: '/logos/wwf.webp', h: 54 },
+  { name: 'Zuper', src: '/logos/zuper.png', h: 36 },
+  { name: 'Tesla', src: '/logos/tesla.png', h: 24 },
+  { name: 'Delta Air Lines', src: '/logos/delta.png', h: 36 },
+  { name: 'AWS', src: '/logos/aws.jpeg', h: 44 },
 ]
 
 function Mark({ logo }: { logo: Logo }) {
@@ -28,7 +28,7 @@ function Mark({ logo }: { logo: Logo }) {
       <img
         src={logo.src}
         alt={logo.name}
-        style={{ height: logo.h ?? 28, width: 'auto', filter: 'grayscale(1) opacity(0.45) contrast(1.05)' }}
+        style={{ height: logo.h ?? 28, width: 'auto', filter: 'grayscale(1) opacity(0.6) contrast(1.08)' }}
         className="object-contain"
       />
     )
@@ -50,7 +50,7 @@ export default function LogoBar() {
   return (
     <section
       aria-label="Companies Ashwin has worked with"
-      className="relative bg-white w-full pt-2 pb-4 overflow-hidden"
+      className="relative bg-white w-full pt-0 pb-4 overflow-hidden -mt-20"
     >
       <p className="text-center font-mono text-[10px] tracking-[0.34em] uppercase text-[#0a1628]/32 mb-6">
         Worked with
