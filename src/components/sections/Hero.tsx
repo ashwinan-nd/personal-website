@@ -2,18 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import dynamic from 'next/dynamic'
 import TileGrid from '@/components/ui/TileGrid'
 import GlassButton from '@/components/ui/GlassButton'
-
-const DotAvatar = dynamic(() => import('./DotAvatar'), { ssr: false })
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
   const [tilesActive, setTilesActive] = useState(true)
-  const [nameHover, setNameHover] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
@@ -45,7 +41,7 @@ export default function Hero() {
     <section
       id="hero"
       ref={sectionRef}
-      className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-white"
+      className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden bg-white"
     >
       {/* Tile grid — z-0 */}
       <div className="absolute inset-0 z-0">
@@ -64,58 +60,53 @@ export default function Hero() {
       />
 
       {/* Content — nudged up slightly */}
-      <div className="relative z-10 flex flex-col items-center px-6" style={{ transform: 'translateY(-3vh)' }}>
-        {/* Avatar + name unit */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
-          {/* Dot avatar — scroll-driven head tilt */}
-          <div className="relative flex items-center justify-center shrink-0">
-            <motion.div
-              className="relative w-[172px] sm:w-[210px] md:w-[262px]"
-              initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
-              animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
-              transition={{ duration: 0.9, ease: EASE }}
-            >
-              <DotAvatar src="/ashwin-frames.png" className="block w-full h-auto" />
-            </motion.div>
-          </div>
-
-          {/* Name → tagline hover/focus swap. Both layers occupy the same box
-              (tagline absolute) so nothing shifts; keyboard-focusable. */}
-          <div
-            className="relative inline-block outline-none"
-            tabIndex={0}
-            onMouseEnter={() => setNameHover(true)}
-            onMouseLeave={() => setNameHover(false)}
-            onFocus={() => setNameHover(true)}
-            onBlur={() => setNameHover(false)}
-            aria-label="Ashwin Anand — Building enterprise systems and 0-to-1 systems that make hard problems simple"
+      <div className="relative z-10 flex flex-col items-center px-6" style={{ transform: 'translateY(-6.5vh)' }}>
+        {/* Avatar → divider → name, stacked and centred */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-7 md:gap-11">
+          {/* Halftone loop portrait — oval-rounded bottom, fades into the page */}
+          <motion.div
+            className="relative shrink-0"
+            initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, ease: EASE }}
           >
-            <motion.h1
-              animate={{ opacity: shouldReduceMotion ? 1 : nameHover ? 0 : 1 }}
-              transition={{ duration: 0.55, ease: EASE }}
-              className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
-              style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
-            >
-              <span className="block overflow-hidden pb-[0.06em]">
-                <motion.span className="block" {...lineReveal(0.1)}>Ashwin</motion.span>
-              </span>
-              <span className="block overflow-hidden pb-[0.06em]">
-                <motion.span className="block" {...lineReveal(0.22)}>Anand</motion.span>
-              </span>
-            </motion.h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ashwin-loop.gif"
+              alt="Animated halftone portrait of Ashwin Anand"
+              style={{
+                height: 300,
+                width: 'auto',
+                display: 'block',
+                borderRadius: '26px 26px 46% 46% / 26px 26px 30% 30%',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
+                maskImage: 'linear-gradient(to bottom, black 0%, black 82%, transparent 99%)',
+              }}
+            />
+          </motion.div>
 
-            {/* Tagline — smaller, same color, left-aligned, ~3-4 words/line */}
-            <motion.p
-              aria-hidden={!nameHover}
-              initial={false}
-              animate={{ opacity: shouldReduceMotion ? 0 : nameHover ? 1 : 0 }}
-              transition={{ duration: 0.55, ease: EASE }}
-              className="absolute top-0 left-0 h-full flex flex-col justify-center font-bold text-[#0a1628] leading-[1.08] tracking-[-0.02em] text-left pointer-events-none"
-              style={{ fontSize: 'clamp(22px, 3vw, 40px)', width: 'min(64vw, 540px)' }}
-            >
-              Building enterprise systems and 0-to-1 systems that make hard problems simple.
-            </motion.p>
-          </div>
+          {/* Thin themed divider — vertical between gif and name (~4 tiles tall);
+              collapses to a short horizontal rule when stacked on mobile. */}
+          <div
+            aria-hidden
+            className="shrink-0 w-[220px] h-px md:w-px md:h-[272px]"
+            style={{
+              background: 'linear-gradient(to bottom, transparent, rgba(10,22,40,0.22) 20%, rgba(10,22,40,0.22) 80%, transparent)',
+            }}
+          />
+
+          {/* Name */}
+          <h1
+            className="font-bold text-[#0a1628] leading-[0.86] tracking-[-0.045em] select-none text-center md:text-left"
+            style={{ fontSize: 'clamp(56px, 9vw, 118px)' }}
+          >
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span className="block" {...lineReveal(0.1)}>Ashwin</motion.span>
+            </span>
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span className="block" {...lineReveal(0.22)}>Anand</motion.span>
+            </span>
+          </h1>
         </div>
 
         {/* Nav buttons — under the avatar + name unit */}

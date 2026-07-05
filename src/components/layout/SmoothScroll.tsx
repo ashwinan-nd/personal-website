@@ -27,7 +27,10 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       gsap.registerPlugin(ScrollTrigger)
 
       lenis = new Lenis({
-        duration: 1.0,
+        duration: 1.35,
+        // Slower overall scroll: one wheel notch travels less distance.
+        wheelMultiplier: 0.72,
+        touchMultiplier: 0.9,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
         orientation: 'vertical',
         smoothWheel: true,

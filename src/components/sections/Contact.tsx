@@ -62,7 +62,11 @@ export default function Contact() {
             the future.
           </h2>
 
-          <GlassButton href="mailto:ashwinan.nd@gmail.com">
+          <GlassButton
+            href="https://outlook.office.com/mail/deeplink/compose?to=ashwina@uw.edu"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Email Ashwin →
           </GlassButton>
         </motion.div>

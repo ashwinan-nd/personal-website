@@ -23,61 +23,11 @@ type Project = {
 
 const projects: Project[] = [
   {
-    id: 'personal-website',
-    name: 'Personal Website',
-    tagline: 'Portfolio',
-    description:
-      'My portfolio, rebuilt to behave like a product. A dot-matrix avatar rendered from a photo in the browser, scroll-driven motion, and interactive 3D tiles.',
-    href: 'https://github.com/ashwinan-nd/personal-website',
-    preview: '/preview-website.png',
-    stack: ['Next.js', 'React', 'TypeScript', 'Three.js', 'Framer Motion'],
-    digest: {
-      oneLiner: 'A portfolio that behaves like a product, not a resume.',
-      sections: [
-        {
-          label: 'Problem',
-          body:
-            'Most developer portfolios are static and forgettable. I wanted something that shows how I think and earns trust in the first few seconds.',
-        },
-        {
-          label: 'What it does',
-          bullets: [
-            'Renders my photo as a live dot-matrix avatar entirely in the browser, with background removal calibrated from the source image.',
-            'Nods the head forward as you scroll, mapped continuously to scroll progress.',
-            'Interactive 3D interest tiles: an orbital globe, an explodable GPU, and a live market chart.',
-            'Live prices run through a server proxy so the API key never reaches the client.',
-          ],
-        },
-        {
-          label: 'Design plan',
-          bullets: [
-            'One calm system: a single navy ink, a soft neomorphic surface, and a tile-grid background that ties every section together.',
-            'Motion earns attention, never fights it. Reveals are staggered, scroll is smooth, and every animation respects reduced-motion.',
-            'A strict layout contract so sections never collide and titles always have breathing room on desktop and mobile.',
-          ],
-        },
-        {
-          label: 'Engineering plan',
-          bullets: [
-            'Next.js App Router, React, and TypeScript, with the heavy 3D code-split behind dynamic imports so first paint stays fast.',
-            'A canvas halftone renderer samples the photo, removes the background by flood-fill, and animates the head on a single rAF loop.',
-            'Finnhub and market data proxied through server route handlers; the key lives only in an env var, never in the client bundle.',
-            'Next: automated visual-regression snapshots and a Lighthouse budget in CI.',
-          ],
-        },
-        {
-          label: 'Status',
-          body: 'Live and iterated on constantly. This page is the latest cut.',
-        },
-      ],
-    },
-  },
-  {
     id: 'launch-lunar',
     name: 'Launch Lunar',
     tagline: 'Space simulator',
     description:
-      'A real-time satellite tracker and lunar launch-trajectory simulator. Over 33,000 tracked objects from live orbital catalogs, in a 3D Earth you can fly around.',
+      'A real-time satellite tracker and lunar launch-trajectory simulator. 33,000+ tracked objects from live orbital catalogs, in a 3D Earth you can fly around.',
     href: 'https://github.com/ashwinan-nd/launchlunar',
     preview: '/preview-launchlunar.png',
     stack: ['Vite', 'Three.js', 'satellite.js', 'mathjs', 'GSAP'],
@@ -92,32 +42,78 @@ const projects: Project[] = [
         {
           label: 'What it does',
           bullets: [
-            'Tracks 33,000+ objects (satellites, debris, Starlink, GPS, stations) from CelesTrak, N2YO, and SATCAT.',
-            'Propagates real orbits with satellite.js and renders them around a 3D Earth.',
-            'Configure a vehicle and launch window, then simulate a trajectory to the Moon.',
-            'Filter by object class and search the catalog live.',
+            'Pulls the live catalog — 33,000+ satellites, debris, Starlink, GPS, and stations — from CelesTrak, N2YO, and SATCAT.',
+            'Propagates every orbit with satellite.js (SGP4) and draws them around a 3D Earth you can spin and zoom.',
+            'Lets you set a rocket, a launch site, and a window, then flies a trajectory out to the Moon.',
+            'Search or filter by object class to pull one object out of the swarm.',
           ],
         },
         {
-          label: 'Design plan',
+          label: 'How I built it',
           bullets: [
-            'Mission-control aesthetic: dark canvas, category-colored objects, and a left rail of mission parameters that never blocks the 3D view.',
-            'Legibility at 33k points: color-code by object class, fade distant debris, and let search pull a single object out of the swarm.',
-            'Three modes (Earth, Trajectory, Moon) that share one camera language so switching never disorients.',
+            'Got one Earth and one orbit propagating correctly first, then scaled the renderer up to the whole catalog.',
+            'Collapsed all 33k objects into a single Three.js instanced-points mesh — thousands of separate meshes tanked the frame rate.',
+            'Moved propagation off the main thread and cached the catalog so a reload does not re-hit every API.',
+            'Wrote the transfer-orbit math in mathjs, then used GSAP to move the camera between Earth, Trajectory, and Moon views.',
+            'Color-coded by object class and faded distant debris so the swarm stays readable.',
           ],
         },
         {
-          label: 'Engineering plan',
+          label: 'Design',
+          body:
+            'Mission-control look: dark canvas, category-colored objects, and a left rail of parameters that never blocks the view. The three modes share one camera language so switching never disorients you.',
+        },
+        {
+          label: 'Next',
+          body: 'A physics-accurate lunar transfer model, and collision-risk scoring across the whole tracked set.',
+        },
+      ],
+    },
+  },
+  {
+    id: 'personal-website',
+    name: 'Personal Website',
+    tagline: 'Portfolio',
+    description:
+      "I wanted a face to go with the name — this site is an extension of who I am. I'm a visual learner, so I built something you experience instead of read.",
+    href: 'https://github.com/ashwinan-nd/personal-website',
+    preview: '/preview-website.png',
+    stack: ['Next.js', 'React', 'TypeScript', 'Three.js', 'Framer Motion'],
+    digest: {
+      oneLiner: 'My portfolio, built like a product and an extension of who I am.',
+      sections: [
+        {
+          label: 'Why',
+          body:
+            "Putting a face to the name matters to me, so the first thing you see is me. This site is an extension of who I am, not a resume. I'm a visual learner — I would rather show you how I think than list it out, so every section is something you play with.",
+        },
+        {
+          label: 'What it does',
           bullets: [
-            'Vite + vanilla JS for a tight bundle; Three.js instanced points so tens of thousands of objects stay at 60fps.',
-            'satellite.js for SGP4 propagation, mathjs for the transfer-orbit math, and GSAP for camera moves.',
-            'Catalog fetched from CelesTrak / N2YO / SATCAT and cached; propagation runs off the main thread.',
-            'Next: a physics-accurate lunar transfer model and collision-risk scoring across the tracked set.',
+            'Opens on a halftone portrait of me that looks up and down on a loop.',
+            'Ties every section together with a tile grid that reacts to your cursor.',
+            'Passions are live 3D toys: an orbital globe, a GPU you can explode, and a market chart on real prices.',
+            'Live prices run through my own server proxy, so the API key never touches your browser.',
           ],
+        },
+        {
+          label: 'How I built it',
+          bullets: [
+            'Next.js App Router, with the heavy Three.js code split behind dynamic imports so first paint stays fast.',
+            'Made the portrait a halftone loop, then rounded and faded its bottom so it melts into the page instead of sitting in a box.',
+            'Built each passion as its own self-contained canvas, then centered them against the shared grid.',
+            'Proxied Finnhub and market data through server route handlers; the key lives in an env var, never the client bundle.',
+            'Kept a strict layout so sections never collide, and made every animation respect reduced-motion.',
+          ],
+        },
+        {
+          label: 'Design',
+          body:
+            'One calm system: a single navy ink, soft neomorphic surfaces, and the tile grid under everything. Motion earns attention instead of fighting it.',
         },
         {
           label: 'Status',
-          body: 'Active build. Catalog and trajectory model are both improving.',
+          body: 'Live and iterated on constantly. This page is the latest cut.',
         },
       ],
     },
@@ -129,7 +125,7 @@ export default function OpenSource() {
   const active = projects.find((p) => p.id === openDigest) ?? null
 
   return (
-    <section id="opensource" className="relative bg-white pt-28 md:pt-36 pb-44 overflow-hidden">
+    <section id="opensource" className="relative bg-white pt-6 md:pt-10 pb-44 overflow-hidden">
       <div className="mx-auto max-w-5xl px-6">
         {/* Header — left-aligned title with page margin, subtitle beneath */}
         <motion.div
@@ -211,6 +207,7 @@ function ProjectCard({
           src={project.preview}
           alt={`${project.name} preview`}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
         />

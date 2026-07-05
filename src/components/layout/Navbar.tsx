@@ -127,12 +127,15 @@ export default function Navbar() {
         </AnimatePresence>
       </div>
 
-      {/* LinkedIn icon */}
+      {/* LinkedIn icon — slides down when the menu is open so the expanded
+          panel never overlaps it, and returns when the menu closes. */}
       <motion.a
         href={LINKEDIN_URL}
         target="_blank"
         rel="noopener noreferrer"
         style={{ ...buttonStyle, background: 'rgba(255,255,255,0.82)' }}
+        animate={{ marginTop: open ? 150 : 0 }}
+        transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
         whileTap={{ scale: 0.94 }}
         whileHover={{ scale: 1.05 }}
         aria-label="LinkedIn profile"

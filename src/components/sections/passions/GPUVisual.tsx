@@ -442,10 +442,10 @@ export default function GPUVisual() {
   const [exploded, setExploded] = useState(false)
 
   return (
-    <div className="w-full flex flex-col items-center gap-2.5" style={{ height: 380 }} data-hover>
-      <div className="relative w-full flex-1" style={{ cursor: 'grab' }}>
+    <div className="w-full h-full min-h-[180px] flex flex-col items-center gap-2.5" data-hover>
+      <div className="relative w-full flex-1 min-h-0" style={{ cursor: 'grab' }}>
         <Canvas
-          camera={{ position: [0, 1.7, 4.4], fov: 40 }}
+          camera={{ position: [0, 1.9, 5.7], fov: 40 }}
           gl={{ antialias: true, alpha: true }}
           shadows
           frameloop="always"
@@ -476,7 +476,8 @@ export default function GPUVisual() {
       </div>
 
       <button
-        onClick={() => setExploded(e => !e)}
+        onClick={(e) => { e.stopPropagation(); setExploded(v => !v) }}
+        style={{ pointerEvents: 'auto' }}
         className="font-mono text-[11px] tracking-widest uppercase px-5 py-2 rounded-full border border-[#0a1628]/12 text-[#0a1628]/45 hover:border-[#0a1628]/25 hover:text-[#0a1628]/65 transition-all duration-200"
       >
         {exploded ? '↙ Collapse' : '↗ Explode View'}

@@ -22,6 +22,10 @@ type Interest = {
   Visual: ComponentType
   /** natural height of the visual, used to scale the grid preview */
   natH: number
+  /** react-three-fiber canvases mis-size inside a CSS scale() wrapper (their
+   * ResizeObserver reads the post-transform width), which pushed the model
+   * off-centre. Such visuals render responsively into the preview box instead. */
+  responsive?: boolean
 }
 
 const interests: Interest[] = [
@@ -33,6 +37,7 @@ const interests: Interest[] = [
       "Space is the new frontier, and we are in the middle of the 2nd Space Race. Useful innovation is growing. My bet: we'll be on Mars by 2033, and I'll be on the Moon by 2035.",
     Visual: GlobeVisual,
     natH: 300,
+    responsive: true,
   },
   {
     id: 'finance',
@@ -51,6 +56,7 @@ const interests: Interest[] = [
       'Intelligence runs on silicon. I care about how a GPU actually works, from the compute die to the memory stacks and power delivery. Open it up and hit explode to watch the whole board come apart.',
     Visual: GPUVisual,
     natH: 330,
+    responsive: true,
   },
   {
     id: 'literacy',
@@ -185,11 +191,18 @@ function InterestCard({
         ⤢
       </span>
 
-      {/* Scaled, non-interactive preview */}
+      {/* Non-interactive preview. Responsive (r3f) visuals fill the box directly
+          so they stay centred; others use the scale-to-fit wrapper. */}
       <div style={{ height: H, overflow: 'hidden', borderRadius: 18 }} className="pointer-events-none flex justify-center">
-        <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top center' }}>
-          <interest.Visual />
-        </div>
+        {interest.responsive ? (
+          <div style={{ width: '100%', height: '100%' }}>
+            <interest.Visual />
+          </div>
+        ) : (
+          <div style={{ height: interest.natH, width: `${100 / k}%`, transform: `scale(${k})`, transformOrigin: 'top center' }}>
+            <interest.Visual />
+          </div>
+        )}
       </div>
 
       {/* Centered pill title */}
@@ -272,7 +285,9 @@ function Overlay({
               {/* FRONT — interactive visual */}
               <div style={{ ...faceBase, ...CARD_STYLE }} className="flex flex-col px-7 pt-8 pb-6">
                 <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-                  <div className="w-full h-full flex items-center justify-center">
+                  {/* Definite height so responsive (r3f) canvases don't expand
+                      past the card — otherwise the model renders low/oversized. */}
+                  <div className="w-full flex items-center justify-center" style={{ height: 380, maxHeight: '100%' }}>
                     <interest.Visual />
                   </div>
                 </div>

@@ -185,7 +185,7 @@ function Moon() {
 
 export default function GlobeVisual() {
   return (
-    <div className="w-full h-72 relative select-none" data-hover>
+    <div className="w-full h-full min-h-[180px] relative select-none" data-hover>
       <Canvas
         camera={{ position: [0, 0.35, 4.3], fov: 38 }}
         gl={{ antialias: true, alpha: true }}
