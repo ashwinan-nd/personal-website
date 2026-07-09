@@ -15,6 +15,7 @@ type Project = {
   href: string
   preview: string
   stack: string[]
+  inProgress?: boolean
   digest: {
     oneLiner: string
     sections: DigestSection[]
@@ -66,6 +67,56 @@ const projects: Project[] = [
         {
           label: 'Next',
           body: 'A physics-accurate lunar transfer model, and collision-risk scoring across the whole tracked set.',
+        },
+      ],
+    },
+  },
+  {
+    id: 'scan-diff',
+    name: 'Scan-Diff',
+    tagline: 'Change detection',
+    inProgress: true,
+    description:
+      'Scan a space or object with your phone, scan it again later, and get a report of exactly what changed — added, removed, and moved material, with evidence photos and size estimates.',
+    href: 'https://github.com/ashwinan-nd/scan-diff',
+    preview: '/preview-scandiff.png',
+    stack: ['Vite', 'TypeScript', 'Three.js', 'WebXR', 'PWA'],
+    digest: {
+      oneLiner: 'Scan a space twice — get a report of exactly what changed.',
+      sections: [
+        {
+          label: 'Problem',
+          body:
+            'Tracking how a physical space changes over time is manual and subjective. Photos show a room but do not prove what moved, and comparing two of them is guesswork. I wanted something that measures the change instead of eyeballing it — and that works for a property record, a job site, or a shelf of assets without rewriting the core.',
+        },
+        {
+          label: 'What it does',
+          bullets: [
+            'Captures a space as a 3D point cloud — live phone depth over WebXR, or a .ply exported from any LiDAR scanning app.',
+            'Aligns the two sessions off a printed QR marker, then refines with ICP so it does not matter where either scan started.',
+            'Diffs the aligned clouds by voxel occupancy and reports added, removed, and moved regions with bounding boxes and size estimates.',
+            'Writes one self-contained HTML report: summary, before/after evidence photos, and alignment quality — prints straight to PDF.',
+          ],
+        },
+        {
+          label: 'How I built it',
+          bullets: [
+            'Got one clean diff working on synthetic ray-marched scenes first, so every stage had ground truth before real sensor noise entered.',
+            'Made removal occlusion-aware — a region only counts as removed where the rescan provably saw the empty space, so a missed corner never reads as a deletion.',
+            'Kept the change signal purely geometric; photos are annotation, so a lighting change can never fake a diff.',
+            'Graded alignment quality and made a poor grade refuse to diff rather than ship a silently wrong report.',
+            'Local-first: scans live in the browser IndexedDB and never leave the device, with a portable file to move one scan between phones.',
+          ],
+        },
+        {
+          label: 'Design',
+          body:
+            'A mission-control dark UI: before and after side by side, a strictness toggle, and a row of stat tiles — regions, added, removed, moved, alignment RMSE — that read the result at a glance. The core pipeline carries zero vertical-specific logic, so one code path serves every use case.',
+        },
+        {
+          label: 'Status',
+          body:
+            'In progress. The full pipeline and PWA are built, tested across 109 automated tests, and browser-verified from 320px phones to 1920px desktops. The one remaining piece is a live smoke test on AR hardware — the on-device depth path is written to spec and feature-detected.',
         },
       ],
     },
@@ -219,10 +270,19 @@ function ProjectCard({
       {/* Body — taller pill; description clamped to 2 lines; chips and CTA
           kept apart so they never collide. */}
       <div className="flex flex-col flex-1 p-7 pt-6">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2.5 mb-3">
           <span className="font-mono text-[10px] tracking-[0.26em] uppercase text-[#1b3a6b]/40">
             {project.tagline}
           </span>
+          {project.inProgress && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#b45309]/[0.08] pl-1.5 pr-2 py-0.5 font-mono text-[9px] tracking-[0.18em] uppercase text-[#b45309]">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inline-flex w-full h-full rounded-full bg-[#f59e0b] opacity-70 motion-safe:animate-ping" />
+                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[#d97706]" />
+              </span>
+              In Progress
+            </span>
+          )}
         </div>
         <a
           href={project.href}
